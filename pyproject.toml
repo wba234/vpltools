@@ -1,0 +1,18 @@
+# Tom's Obvious Minimal Language
+[project]
+name = "findmodules"
+version = "0.3"
+authors = [
+  { name="William Bailey", email="william.bailey@centre.edu" },
+]
+description = "A package which facilitates use of the Moodle VPLs by searching the current working directory for other python files."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/wba234/baileycs1"
