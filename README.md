@@ -1,10 +1,18 @@
 # Automatic Module Discovery
 A module called ```findmodules``` which facilitates use of the Moodle VPLs by searching the current working directory for files which may be student work.
 
-### Example Usage
-I add the following snippet to the top of my unittest files:
-
+### Example Usages
+1. Minimal Use. Find student's file, and run tests.
 ```
+import os.path
+import findmodules
+
+lab = findmodules.import_student_module(os.path.dirname(__file__))
+```
+
+2. More involved: compare a student's code against known good code which serves as an answer key.
+```
+import os.path
 import importlib
 import findmodules
 MODULE_TO_TEST = "fairground_ride_key"     # name of key file, which is ignored.
