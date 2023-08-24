@@ -1,5 +1,5 @@
 # Automatic Module Discovery
-A module called ```findmodules``` which facilitates use of the Moodle VPLs by searching the current working directory for files which may be student work.
+A module called ```findmodules``` which facilitates use of the Moodle VPLs by searching the current working directory for files which may be student work. There is also a feature which can generate ```vpl_evaluate.cases``` files automatically. This has the advantage of showing individual tests on the VPL web page, instead of one big test. The hope is that this makes debugging more approachable. See examples below for how to do this.
 
 ### Example Usages
 1. Minimal Use. Find student's file, and run tests.
@@ -20,6 +20,20 @@ MODULE_TO_TEST = "fairground_ride_key"     # name of key file, which is ignored.
 key = importlib.import_module(MODULE_TO_TEST)
 lab = findmodules.import_student_module(os.path.dirname(__file__), ignore_when_testing=[MODULE_TO_TEST])
 ```
+
+3. Make ```vpl_evaluate.cases```, to show tests individually in the Moodle assignment:
+```
+import findmodules
+import unittest
+
+# ...your TestCase here...
+
+if __name__ == "__main__":
+    findmodules.make_vpl_evaluate_cases(__file__, locals(), include_pylint=False)
+    unittest.main()
+
+```
+You can use this exactly in your test files. The call to ```make_vpl_evaluate_cases()``` __must__ be before the call to ```unittest.main()```, otherwise it will not run. I don't know why.
 
 ## Installation
 1. Download this repository.

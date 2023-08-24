@@ -6,6 +6,7 @@ current working directory. Intend for use with Moodle VPL activities.
 import importlib
 import os.path
 import warnings
+from make_vpl_evaluate_cases import make_vpl_evaluate_cases
 
 DEFAULT_EXTENSION = ".py"
 
