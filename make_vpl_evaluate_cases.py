@@ -25,8 +25,11 @@ def get_test_method_names(unittest_subclass):
 
 def make_cases_file(module_path, test_methods, include_pylint):
     vpl_eval_path = os.path.join(os.path.dirname(module_path), "vpl_evaluate.cases")
-    vpl_evaluate_cases_fo = open(vpl_eval_path, "w")
+    # vpl_evaluate_cases_fo = open(vpl_eval_path, "w")
     module_name, extension = os.path.splitext(os.path.basename(module_path))
+
+    all_test_cases_string = ""
+
     for test_class, test_class_methods in test_methods.items():
         for method_name in test_class_methods:
             # command_string = f"python3.9 -m unittest {module_name}.{test_class}.{method_name}"
@@ -39,7 +42,10 @@ program arguments = -m unittest {module_name}.{test_class}.{method_name}
 output = /.*OK/i
 grade reduction = 100%
 '''
-            print(test_case_format, file=vpl_evaluate_cases_fo)
+            all_test_cases_string += test_case_format + "\n"
+
+    # end for
+
     if include_pylint:
         py_lint_test_case = f'''
 Case = PyLint Style Check
@@ -48,9 +54,25 @@ program arguments = -m pylint {module_name}
 output = /.*Your code has been rated at 10.00/10*/i
 grade reduction = 0%
 '''
-        print(py_lint_test_case, file=vpl_evaluate_cases_fo)
+        all_test_cases_string += py_lint_test_case + "\n"
+    # end if
+    
+    try:
+        # Two reasons we might want to write the file:
+        # 1. There is no file.
+        with open(vpl_eval_path, "r") as vpl_evaluate_cases_fo:
+            old_test_cases_string = vpl_evaluate_cases_fo.read()
 
-    vpl_evaluate_cases_fo.close()
+        # 2. The file content needs to be updated.
+        if old_test_cases_string != all_test_cases_string:
+            raise FileNotFoundError
+
+        print("no changes...", end="")
+
+    except FileNotFoundError:
+
+        with open(vpl_eval_path, "w") as vpl_evaluate_cases_fo:
+            vpl_evaluate_cases_fo.write(all_test_cases_string)
 
 
 def make_vpl_evaluate_cases(module_name, module_dict_, include_pylint=True):
