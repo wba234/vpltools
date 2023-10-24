@@ -54,7 +54,7 @@ You can use this exactly in your test files. The call to ```make_vpl_evaluate_ca
 1. Download this repository.
 2. Navigate (i.e. ```cd```) into the top-level folder of the repository. You should see a file called ```pyproject.toml```.
 3. In a terminal, run ```python3 -m pip install .``` to install the program. You may want to install this in "editable" mode by adding ```-e``` or ```--editable```:
-```python3 -m pip -e install .```
+```python3 -m pip install --editable .```
 
 __Note:__ To use this with Moodle VPLs, you will need to upload this project's file ```findmodules.py``` along with the solution, test cases, and any other files. At time of writing, ```findmodules``` is NOT in the Python Package Index.
 
@@ -71,7 +71,7 @@ You you should not need to do this more than once, if at all.
 
 4. Install ```findmodules```:
 
-   ```python3 -m pip -e install .```
+   ```python3 -m pip install -e .```
 
 5. Check that the module is importable:
 
