@@ -56,7 +56,7 @@ You you should not need to do this more than once, if at all.
 
 4. Install ```findmodules```:
 
-   ```python3 -m pip install -e .```
+   ```python3 -m pip install --editable .```
 
 5. Check that the module is importable:
 
@@ -68,3 +68,7 @@ You you should not need to do this more than once, if at all.
 
 ## Notes:
 - The directory structure is minimal. I had difficulty ensuring that the *package* was importable with ```import findmodules```rather than with ```from findmodules import findmodules``` or ```findmodules.findmodules```.
+
+
+# TODO
+- get_test_method_names() Needs to only collect callable objects. Currently, it tries to make tests for things which are strings. See make_vpl_evaluate_cases.py:20.
