@@ -71,4 +71,5 @@ You you should not need to do this more than once, if at all.
 
 
 # TODO
-- get_test_method_names() Needs to only collect callable objects. Currently, it tries to make tests for things which are strings. See make_vpl_evaluate_cases.py:20.
+- ```get_test_method_names()``` Needs to only collect callable objects. Currently, it tries to make tests for things which are strings. See ```make_vpl_evaluate_cases.py:20```.
+- Add output confirming which file is being tested.
