@@ -61,7 +61,7 @@ You you should not need to do this more than once, if at all.
 
 4. Install ```findmodules``` in editable mode (in case you find bugs):
 
-   ```python3 -m pip install -e .```
+   ```python3 -m pip install --editable .```
 
 5. Check that the module is importable:
 
@@ -74,3 +74,7 @@ You you should not need to do this more than once, if at all.
 ## Notes:
 - Consider installing this for each of your local Python 3 installations, e.g., CPython, and Anaconda. This may save a headache when the wrong one is invoked, and everything breaks unexpectedly.
 - The directory structure is minimal. I had difficulty ensuring that the *package* was importable with ```import findmodules```rather than with ```from findmodules import findmodules``` or ```findmodules.findmodules```. If you know more about the packaging and distribution of Python projects than I do (it wouldn't take much) feel free to suggest a new organization.
+
+# TODO
+- ```get_test_method_names()``` Needs to only collect callable objects. Currently, it tries to make tests for things which are strings. See ```make_vpl_evaluate_cases.py:20```.
+- Add output confirming which file is being tested.

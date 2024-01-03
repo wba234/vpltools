@@ -17,7 +17,7 @@ def get_unittest_subclasses(unittest_module_dict) -> dict:
 def get_test_method_names(unittest_subclass):
     test_method_names = []
     for key, value in unittest_subclass.__dict__.items():
-        if key.startswith("test"):
+        if key.startswith("test"): # and callable(key):
             test_method_names.append(key)
 
     return test_method_names
