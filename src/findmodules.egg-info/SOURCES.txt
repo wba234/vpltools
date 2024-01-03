@@ -1,7 +1,6 @@
 LICENSE.txt
 README.md
 pyproject.toml
-setup.py
 src/findmodules/__init__.py
 src/findmodules/findmodules.py
 src/findmodules/make_vpl_evaluate_cases.py
