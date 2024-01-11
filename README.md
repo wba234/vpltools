@@ -30,10 +30,14 @@ class MyTestCaseClass(unittest.TestCase):
 
    # ...your TestCase here...
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        findmodules.make_vpl_evaluate_cases(__file__, locals(), include_pylint=False)    
-        return super().tearDownClass()
+   @classmethod
+   def tearDownClass(cls) -> None:
+      findmodules.make_vpl_evaluate_cases(
+         __file__, 
+         globals(), 
+         include_pylint=False)  
+  
+      return super().tearDownClass()
 
 if __name__ == "__main__":
     unittest.main()

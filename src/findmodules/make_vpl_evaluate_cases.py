@@ -77,16 +77,12 @@ grade reduction = 0%
 
 def make_vpl_evaluate_cases(module_name, module_dict_, include_pylint=True):
     print("Making vpl_evaluate.cases...", end="")
-    # MODULE = test_formatting_time
-    # module_name = MODULE.__name__
 
-    test_methods = {} # keys are class names, values are lists of method names
-    #module_object = importlib.import_module(module_name)
+    test_methods = {} # keys are class names, values are lists of test method names
     subclasses_dict = get_unittest_subclasses(module_dict_)
     for key, value in subclasses_dict.items():
         test_methods[key] = get_test_method_names(value)
 
-    # print(test_methods)
     make_cases_file(module_name, test_methods, include_pylint)
     print("done.")
 
