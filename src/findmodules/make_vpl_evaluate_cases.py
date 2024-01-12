@@ -1,6 +1,10 @@
+'''
+Provides functions for automatically generating vpl_evaluate.cases files
+for use with Moodle VPL assignments.
+'''
 import os.path
 import unittest
-import importlib
+# import importlib
 
 def get_unittest_subclasses(unittest_module_dict) -> dict:
     unittest_subclasses = {}
