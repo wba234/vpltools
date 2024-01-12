@@ -19,25 +19,36 @@ import unittest
 import abc
 
 import findmodules
+import make_vpl_evaluate_cases
 
 class VPLunittest(unittest.TestCase, abc.ABC):
 
-    @abc.abstractmethod
-    def storeGlobals(cls) -> None:
-        raise NotImplementedError
+    # @abc.abstractmethod
+    # def storeGlobals(cls) -> None:
+    #     raise NotImplementedError
     
 
-    @abs.abstractmethod
-    def getGlobals(cls) -> dict[str, any]:
-        raise NotImplementedError
+    # @abc.abstractmethod
+    # def getGlobals(cls) -> dict[str, any]:
+    #     raise NotImplementedError
     
 
-    @abs.abstractmethod
-    def getFileModule(cls) -> str:
-        raise NotImplementedError
+    # @abc.abstractmethod
+    # def getFileModule(cls) -> str:
+    #     raise NotImplementedError
     
+    @classmethod
+    def getFileModule(self) -> str:
+        print("Hi.")
+        return __file__
 
     @classmethod
+    def getTestNames(cls) -> str:
+        return cls.__dict__
+    
+    @classmethod
     def tearDownClass(cls) -> None:
-        findmodules.make_vpl_evaluate_cases(__file__, cls.getGlobals(), include_pylint=False)
+        # findmodules.make_vpl_evaluate_cases(__file__, cls.getGlobals(), include_pylint=False)
+        # findmodules.make_vpl_evaluate_cases(__file__, globals(), include_pylint=False)
+        make_vpl_evaluate_cases.make_vpl_evaluate_cases(cls.getFileModule(), globals(), include_pylint=False)
         return super().tearDownClass()
