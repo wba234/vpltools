@@ -2,7 +2,7 @@
 A module called ```findmodules``` which facilitates use of the Moodle VPLs by searching the current working directory for files which may be student work. There is also a feature which can generate ```vpl_evaluate.cases``` files automatically. This has the advantage of showing individual tests on the VPL web page, instead of one big test. The hope is that this makes debugging more approachable. See examples below for how to do this.
 
 # TODO
-- Weahwow. Nothing to do.
+-  Add a basic test ensuring that there are no global variables!
 
 ## Example Usages
 1. Minimal Use. Find student's file, and run tests.
