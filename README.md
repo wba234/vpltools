@@ -1,6 +1,9 @@
 # Automatic Module Discovery
 A module called ```findmodules``` which facilitates use of the Moodle VPLs by searching the current working directory for files which may be student work. There is also a feature which can generate ```vpl_evaluate.cases``` files automatically. This has the advantage of showing individual tests on the VPL web page, instead of one big test. The hope is that this makes debugging more approachable. See examples below for how to do this.
 
+# TODO
+- Add output confirming which file is being tested.
+
 ## Example Usages
 1. Minimal Use. Find student's file, and run tests.
 ```
@@ -79,6 +82,32 @@ You you should not need to do this more than once, if at all.
 - Consider installing this for each of your local Python 3 installations, e.g., CPython, and Anaconda. This may save a headache when the wrong one is invoked, and everything breaks unexpectedly.
 - The directory structure is minimal. I had difficulty ensuring that the *package* was importable with ```import findmodules```rather than with ```from findmodules import findmodules``` or ```findmodules.findmodules```. If you know more about the packaging and distribution of Python projects than I do (it wouldn't take much) feel free to suggest a new organization.
 
-# TODO
-- ```get_test_method_names()``` Needs to only collect callable objects. Currently, it tries to make tests for things which are strings. See ```make_vpl_evaluate_cases.py:20```.
-- Add output confirming which file is being tested.
+
+# Python packaging Tutorial Commands
+This module was packaged by following and adapting to the [Python.org packaging tutorial](https://packaging.python.org/en/latest/tutorials/packaging-projects/), around January 2024.
+A summary of the commands used is below, along with the suggested directory structure:
+```
+~/Documents/findmodules/
+   |- tests/
+   |- src/
+   |  |- findmodules/
+   |  |  |- example.py
+   |  |  |- __init__.py
+   |- license.txt
+   |- readme.md
+   |- pyproject.toml
+```
+
+The commands are fun from within the top-level module directory: ```~/Documents/findmodules/```
+```
+$ python3.10 -m pip install --upgrade build  # failed?
+$ python3.10 -m build                        # failed to create virtual environment
+$ sudo apt-install python3.10-venv           # OK with password
+$ python3.10 -m build                        # Build succeeded
+```
+
+But usually, if everything is installed, you can just:
+1. Make edits to the package.
+2. Edit the version number in pyproject.toml (with ```vim pyproject.toml```)
+3. Rebuild the package with ```$ python3.10 -m build```
+4. Reinstall the package with ```$ python3.10 pip install . --editable``` (Of course, this shouldn't be necessary, but the version number won't change unless you do this.)
