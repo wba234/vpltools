@@ -10,8 +10,42 @@ import warnings
 
 DEFAULT_EXTENSION = ".py"
 
+# ----------------------------------------------------------------------------------------
+
 class BasicTestFailedError(RuntimeError):
     pass
+
+
+KNOWN_BUILT_IN_NAMES = [
+    '__name__', 
+    '__doc__', 
+    '__package__', 
+    '__loader__', 
+    '__spec__', 
+    '__file__', 
+    '__cached__', 
+    '__builtins__'
+]
+
+def has_no_globals(module) -> bool:
+    for obj_name, obj_value in module.__dict__.items():
+        if obj_name in KNOWN_BUILT_IN_NAMES:
+            continue
+
+        if obj_name.startswith("__"):
+            print(f"Ignoring suspected global built in name '{obj_name}'.")
+            continue
+
+        if callable(obj_value):
+            continue
+        
+        # Not know or suspected built in, and not callable means GLOBAL VARIABLE! >:-(
+        # raise BasicTestFailedError(f"Global object '{obj_name}' of type '{type(obj_value)}' detected!")
+        return False
+    
+    return True
+
+# ----------------------------------------------------------------------------------------
 
 def find_all_modules_in_dir(use_directory=None, remove_tests=True, verbose=False, extension=DEFAULT_EXTENSION):
     '''
@@ -37,6 +71,7 @@ def find_all_modules_in_dir(use_directory=None, remove_tests=True, verbose=False
 def run_basic_tests(module):
     basic_test_messages = [
         (hasattr(module, "main"), "A main() function is required!"),
+        (has_no_globals(module), "Global variables are forbidden in this assignment!"),
         # TODO: No global variables!
     ]
     
