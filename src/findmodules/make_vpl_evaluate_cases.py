@@ -5,6 +5,7 @@ for use with Moodle VPL assignments.
 import os.path
 import unittest
 # import importlib
+from typing import List, Tuple, Callable, Dict, Union
 
 def get_unittest_subclasses(unittest_module_dict) -> dict:
     unittest_subclasses = {}
@@ -89,6 +90,88 @@ def make_vpl_evaluate_cases(module_name, module_dict_, include_pylint=True):
 
     make_cases_file(module_name, test_methods, include_pylint)
     print("done.")
+
+
+CASE_PAIR_ARGS = "args"
+CASE_PAIR_IN_FILE = "outfile"
+
+def make_vpl_case_pairs(test_cases: List[Dict[str, Union[Tuple, str]]], 
+                        local_path_prefix: str,
+                        key_program: Callable,
+                        student_extension: str = "_student_results.txt", 
+                        key_file_extension: str = "_key_results.txt",
+                        file_comparison_program: str = "differ.sh"):
+    '''
+    Use this function when you want to compare a student output file with a key file.
+    test_cases : a list of sets of command line arguments for the program being tested.
+                These are used for both the student program and the key program. The format 
+                for these is that of a dictionary, with the keys ARGS, and IN_FILE.
+                ARGS' value should be a tuple of strings. These should be the first N-2nd
+                    command line arguments of key_program, and the expected student program.
+                IN_FILE's value should be a string; the name of the file which the program 
+                    will read from. This should be the N-1st command line argument of both 
+                    student and key progrmams. The Nth command line argument of both key 
+                    and student programs should be the name of the output file to write to. 
+                    That name is generated automatically by this function.
+    local_path_prefix : The result of calling os.path.dirname(os.path.abspath(__file__)) 
+                in the scope which calls this function. Or wherever the input files can be
+                found, and output files should be written. No, those can't be different.
+
+    '''
+    # --- YOU SHOULD NOT HAVE TO CHANGE THIS PART --------------------------------------------
+    print("Making vpl_evaluate.cases...", end="")
+
+    write_to_file = "vpl_evaluate.cases"
+    write_to_file = os.path.join(local_path_prefix, write_to_file)
+
+    try:
+        with open(write_to_file, 'r') as fp:
+            old_file_contents = fp.read()
+    except FileNotFoundError:
+        old_file_contents = None
+
+    new_file_contents = ""
+    for argument_dict in test_cases:
+
+        # Combine all command line arguments into a single string
+        argument_str = " ".join([str(arg) for arg in argument_dict[CASE_PAIR_ARGS]])
+
+        # Figure out which files we'll write to
+        file_base_name = os.path.splitext(os.path.basename(argument_dict[CASE_PAIR_IN_FILE]))[0]
+        output_file_basename = f"{argument_str.replace(' ', '_')}_{file_base_name}"
+        student_output_file_name = output_file_basename + student_extension
+        key_output_file_name = output_file_basename + key_file_extension
+
+        # Remember, the triple quotes provide (mostly) WYSIWYG formatting.
+        case_pair_format = f'''Case = Run args {argument_str} {argument_dict[CASE_PAIR_IN_FILE]}
+    Program arguments = {argument_str} {argument_dict[CASE_PAIR_IN_FILE]} {student_output_file_name}
+    Output = ""
+    Grade reduction = 100%
+
+Case = Check args {argument_str} {argument_dict[CASE_PAIR_IN_FILE]}
+    Program to run = {file_comparison_program}
+    Program arguments = {key_output_file_name} {student_output_file_name}
+    Output = "Empty diff. #nonewsisgoodnews"
+    Grade reduction = 100%
+
+'''
+        new_file_contents += case_pair_format
+        # brute_force_knapsack.bfk(
+        key_program(
+            *argument_dict[CASE_PAIR_ARGS],
+            os.path.join(local_path_prefix, argument_dict[CASE_PAIR_IN_FILE]), 
+            os.path.join(local_path_prefix, key_output_file_name))
+
+    # end for.
+
+    if old_file_contents == new_file_contents:
+        print("no changes...done.")
+    else:
+        with open(write_to_file, 'w') as fp:
+            fp.write(new_file_contents)
+
+        print("done.")
+
 
 
 if __name__ == '__main__':
