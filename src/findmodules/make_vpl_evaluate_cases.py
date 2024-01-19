@@ -4,8 +4,9 @@ for use with Moodle VPL assignments.
 '''
 import os.path
 import unittest
-# import importlib
 from typing import List, Tuple, Callable, Dict, Union
+from unittest.mock import patch
+from io import StringIO
 
 
 def overwrite_file_if_different(file_path, new_contents):
@@ -98,7 +99,7 @@ def make_vpl_evaluate_cases(module_name, module_dict_, include_pylint=True):
 
 
 CASE_PAIR_ARGS = "args"
-CASE_PAIR_IN_FILE = "outfile"
+CASE_PAIR_IN_FILE = "infile"
 
 def make_vpl_case_pairs(test_cases: List[Dict[str, Union[Tuple, str]]], 
                         local_path_prefix: str,
@@ -163,6 +164,31 @@ Case = Check args {argument_str} {argument_dict[CASE_PAIR_IN_FILE]}
     write_to_file = os.path.join(local_path_prefix, write_to_file)
 
     overwrite_file_if_different(write_to_file, new_file_contents)
+
+
+def make_vpl_output_comparison_cases(test_cases: List[Dict[str, Union[Tuple, str]]], 
+                                     local_path_prefix: str,
+                                     key_program: Callable):
+    all_test_cases_string = ""
+    for test_case_dict in test_cases:
+        args_string = " ".join([str(arg) for arg in test_case_dict[CASE_PAIR_ARGS]])
+
+        with patch("sys.stdout", new = StringIO()) as captured_output:
+            key_program(*test_case_dict[CASE_PAIR_ARGS],
+                        os.path.join(local_path_prefix, test_case_dict[CASE_PAIR_IN_FILE]))
+            key_output = captured_output.getvalue()
+
+        test_case_text = f'''Case = Test args {args_string} {test_case_dict[CASE_PAIR_IN_FILE]}
+    Program arguments = {args_string} {test_case_dict[CASE_PAIR_IN_FILE]}
+    Output = "{key_output}"
+    Grade reduction = 100%
+
+'''
+        all_test_cases_string += test_case_text
+    # end for
+    
+    vpl_evaluate_cases_file = os.path.join(local_path_prefix, "vpl_evaluate.cases")
+    overwrite_file_if_different(vpl_evaluate_cases_file, all_test_cases_string)
 
 
 if __name__ == '__main__':
