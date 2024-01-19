@@ -7,6 +7,27 @@ import unittest
 # import importlib
 from typing import List, Tuple, Callable, Dict, Union
 
+
+def overwrite_file_if_different(file_path, new_contents):
+    # Two cases for wrtiting the file:
+    # 1. It doesn't exist.
+    # 2. It's out of date.
+    
+    try:
+        with open(file_path, 'r') as old_file_object:
+            old_file_contents = old_file_object.read()
+
+        if old_file_contents != new_contents:
+            raise FileNotFoundError
+
+        print("no changes...", end="")
+    except FileNotFoundError:
+        with open(file_path, "w") as new_file_object:
+            new_file_object.write(new_contents)
+
+    print("done.")
+
+
 def get_unittest_subclasses(unittest_module_dict) -> dict:
     unittest_subclasses = {}
     # for key, value in unittest_module.__dict__.items():
@@ -61,23 +82,7 @@ grade reduction = 0%
 '''
         all_test_cases_string += py_lint_test_case + "\n"
     # end if
-    
-    try:
-        # Two reasons we might want to write the file:
-        # 1. There is no file.
-        with open(vpl_eval_path, "r") as vpl_evaluate_cases_fo:
-            old_test_cases_string = vpl_evaluate_cases_fo.read()
-
-        # 2. The file content needs to be updated.
-        if old_test_cases_string != all_test_cases_string:
-            raise FileNotFoundError
-
-        print("no changes...", end="")
-
-    except FileNotFoundError:
-
-        with open(vpl_eval_path, "w") as vpl_evaluate_cases_fo:
-            vpl_evaluate_cases_fo.write(all_test_cases_string)
+    overwrite_file_if_different(vpl_eval_path, all_test_cases_string)
 
 
 def make_vpl_evaluate_cases(module_name, module_dict_, include_pylint=True):
@@ -121,15 +126,6 @@ def make_vpl_case_pairs(test_cases: List[Dict[str, Union[Tuple, str]]],
     # --- YOU SHOULD NOT HAVE TO CHANGE THIS PART --------------------------------------------
     print("Making vpl_evaluate.cases...", end="")
 
-    write_to_file = "vpl_evaluate.cases"
-    write_to_file = os.path.join(local_path_prefix, write_to_file)
-
-    try:
-        with open(write_to_file, 'r') as fp:
-            old_file_contents = fp.read()
-    except FileNotFoundError:
-        old_file_contents = None
-
     new_file_contents = ""
     for argument_dict in test_cases:
 
@@ -163,15 +159,10 @@ Case = Check args {argument_str} {argument_dict[CASE_PAIR_IN_FILE]}
             os.path.join(local_path_prefix, key_output_file_name))
 
     # end for.
+    write_to_file = "vpl_evaluate.cases"
+    write_to_file = os.path.join(local_path_prefix, write_to_file)
 
-    if old_file_contents == new_file_contents:
-        print("no changes...done.")
-    else:
-        with open(write_to_file, 'w') as fp:
-            fp.write(new_file_contents)
-
-        print("done.")
-
+    overwrite_file_if_different(write_to_file, new_file_contents)
 
 
 if __name__ == '__main__':
