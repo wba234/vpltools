@@ -135,7 +135,8 @@ class VPLTestCase:
     def __init__(self, 
                  case_type: SemanticCaseType, 
                  program_arguments: Tuple = (), 
-                 program_input_file: str = "", 
+                 program_input_file: str = "",
+                 program_output_file: str = "",
                  program_uses_input: bool = True):
 
         if program_uses_input and program_arguments == () and program_input_file == "":
@@ -144,6 +145,7 @@ class VPLTestCase:
         self.case_type = case_type
         self.args = program_arguments
         self.infile = program_input_file
+        self.outfile = program_output_file
 
 
     @classmethod
