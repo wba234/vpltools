@@ -86,104 +86,125 @@ class VPLTestCase:
             )
         }
 
-    CASE_NAME_COMMON_FORMAT = " with args {args_str} {input_file_name}"
-    PROGRAM_ARGS_COMMON_FORMAT = " {args_str} {test_case_dict[CASE_PAIR_IN_FILE]} "
+    CASE_NAME_COMMON_FORMAT = " with args {args_str}"
+    
+    PROGRAM_ARGS_COMMON_FORMAT = " {args_str} "
+    
+    # PYLINT_ARGS: List[str] = []
+    # PYLINT_ARGS = " ".join(PYLINT_ARGS)
 
-    VPL_CASE_PARTS = {
-        VPLCaseParts.CASE_NAME : {
-            VPLCaseType.OUTPUT_COMPARISON           : "Case = Output" + CASE_NAME_COMMON_FORMAT,
-            VPLCaseType.RUN_FOR_FILE_GEN            : "Case = Run" + CASE_NAME_COMMON_FORMAT,
-            VPLCaseType.RUN_FOR_FILE_GEN_OUTPUT_COMP: "Case = Check stdout, Generate file" + CASE_NAME_COMMON_FORMAT,
-            VPLCaseType.FILE_COMPARISON             : "Case = Generate file" + CASE_NAME_COMMON_FORMAT,
-            VPLCaseType.PYTHON_UNITTEST             : "Case = {method_name}",
-            VPLCaseType.PYLINT_ANALYSIS             : "Case = PyLiny Style Check",
-        },
-        VPLCaseParts.PROGRAM_TO_RUN : {
-            VPLCaseType.OUTPUT_COMPARISON           : "", # Empty by design, defaults to student program.
-            VPLCaseType.RUN_FOR_FILE_GEN            : "", # Empty by design, defaults to student program.
-            VPLCaseType.RUN_FOR_FILE_GEN_OUTPUT_COMP: "", # Empty by design, defaults to student program.
-            VPLCaseType.FILE_COMPARISON             : "    Program to run = {file_comparison_program}",
-            VPLCaseType.PYTHON_UNITTEST             : "    Program to run = /usr/bin/python3",
-            VPLCaseType.PYLINT_ANALYSIS             : "    Program to run = /usr/bin/python3",
-        },
-        VPLCaseParts.PROGRAM_ARGUMENTS : {
-            VPLCaseType.OUTPUT_COMPARISON           : "    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT,
-            VPLCaseType.RUN_FOR_FILE_GEN            : "    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT + "{student_output_file_name}",
-            VPLCaseType.RUN_FOR_FILE_GEN_OUTPUT_COMP: "    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT + "{student_output_file_name}",
-            VPLCaseType.FILE_COMPARISON             : "    Program arguments = {key_output_file_name} {student_output_file_name}",
-            VPLCaseType.PYTHON_UNITTEST             : "    Program arguments = -m unittest{module_name}.{test_class}.{method_name}",
-            VPLCaseType.PYLINT_ANALYSIS             : "    Program arugments = -m pylint {module_name}",
-        },
-        VPLCaseParts.PROGRAM_OUTPUT : {
-            VPLCaseType.OUTPUT_COMPARISON           : "    Output = \"{key_output}\"",
-            VPLCaseType.RUN_FOR_FILE_GEN            : "",  # Empty by design, no output expected, but can be tolerated.
-            VPLCaseType.RUN_FOR_FILE_GEN_OUTPUT_COMP: "    Output = \"{key_output}\"",
-            VPLCaseType.FILE_COMPARISON             : "    Output = \"Empty diff. #nonewsisgoodnews\"",
-            VPLCaseType.PYTHON_UNITTEST             : "    Output = /.*OK/i",
-            VPLCaseType.PYLINT_ANALYSIS             : "    Output = /.*Your code has been rated at 10.00/10*/i",
-        },
-        VPLCaseParts.GRADE_REDUCTION : {
-            VPLCaseType.OUTPUT_COMPARISON           : "    Grade reduction = 100%",
-            VPLCaseType.RUN_FOR_FILE_GEN            : "    Grade reduction = 100%",
-            VPLCaseType.RUN_FOR_FILE_GEN_OUTPUT_COMP: "    Grade reduction = 100%",
-            VPLCaseType.PYTHON_UNITTEST             : "    Grade reduction = 100%",
-            VPLCaseType.PYLINT_ANALYSIS             : "    Grade resuction = 0%",
-        }
+    VPL_CASE_TEMPLATES = {
+        VPLCaseType.OUTPUT_COMPARISON           :(
+              "Case = Output" + CASE_NAME_COMMON_FORMAT,
+            + "\n    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT
+            + "\n    Output = \"{key_output}\""
+            + "\n    Grade reduction = 100%"
+            + "\n"
+        ),
+        VPLCaseType.RUN_FOR_FILE_GEN            :(
+              "Case = Run" + CASE_NAME_COMMON_FORMAT,
+            + "\n    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT + "{student_output_file_name}"
+            + "\n    Grade reduction = 100%"
+            + "\n"
+        ),
+        VPLCaseType.RUN_FOR_FILE_GEN_OUTPUT_COMP:(
+              "Case = Check stdout, Generate file" + CASE_NAME_COMMON_FORMAT,
+            + "\n    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT + "{student_output_file_name}"
+            + "\n    Output = \"{key_output}\""
+            + "\n    Grade reduction = 100%"
+            + "\n"
+        ),
+        VPLCaseType.FILE_COMPARISON             :(
+              "Case = Generate file" + CASE_NAME_COMMON_FORMAT
+            + "\n    Program to run = {file_comparison_program}"
+            + "\n    Program arguments = {key_output_file_name} {student_output_file_name}"
+            + "\n    Output = \"Empty diff. #nonewsisgoodnews\""
+            + "\n    Grade reduction = 100%"
+            + "\n"
+        ),
+        VPLCaseType.PYTHON_UNITTEST             :(
+              "Case = {method_name}"
+            + "\n    Program to run = /usr/bin/python3"
+            + "\n    Program arguments = -m unittest{module_name}.{test_class}.{method_name}"
+            + "\n    Output = /.*OK/i"
+            + "\n"
+        ),
+        VPLCaseType.PYLINT_ANALYSIS             :(
+              "Case = PyLiny Style Check"
+            + "\n    Program to run = /usr/bin/python3"
+            + "\n    Program arugments = -m pylint {module_name}" # + " " + PYLINT_ARGS
+            + "\n    Output = /.*Your code has been rated at 10.00/10*/i"
+            + "\n    Grade reduction = 0%"
+            + "\n"
+        )
     }
  
+    student_extension = "_student_results.txt",
+    key_file_extension = "_key_results.txt",
+
 
     def __init__(self, 
                  case_type: SemanticCaseType, 
-                 program_arguments: Tuple = (), 
-                 program_input_file: str = "",
-                 program_output_file: str = "",
+                 program_arguments: Tuple = (),
+                 outfile_index: int = None,
                  program_uses_input: bool = True):
 
-        if program_uses_input and program_arguments == () and program_input_file == "":
-            raise ValueError("The program must have some input!")
+        if program_uses_input and program_arguments == ():
+            raise ValueError("The program must have some arguments! Override with program_uses_input=False")
 
         self.case_type = case_type
         self.args = program_arguments
-        self.infile = program_input_file
-        self.outfile = program_output_file
+        self.outfile_index = outfile_index
+        self.uses_input = program_uses_input
 
 
-    @classmethod
-    def make_case_block_of_type(cls, case_type: VPLCaseType) -> str:
-        block_text = ""
-        for case_part in cls.VPL_CASE_PARTS:
-            block_text += cls.VPL_CASE_PARTS[case_part][case_type] + "\n"
-        block_text += "\n\n"
-
-        return block_text
+    def __repr__(self):
+        return f"VPLTestCase({self.case_type}, program_arguments={self.args}, outfile_index={self.outfile_index}, program_uses_input={self.uses_input}"
     
 
-    def make_case_block(self):
+    def make_all_case_blocks(self):
+        all_case_blocks = ""
         for case_type in self.CASE_TYPE_FOR_SEMANTIC[self.case_type]:
-            # Compile a formattable template for the Case.
-            case_block += self.make_case_block_of_type(case_type)
 
-            # Compile all the things that needtobesubstitutedinto the Case template.
+            # Compile all the things that need to be substituted into the Case template.
+
             args_str = " ".join([str(arg) for arg in self.args])
-            file_base_name = os.path.splitext(os.path.basename(self.infile))[0]
-            output_file_basename = f"{args_str.replace(' ', '_')}_{file_base_name}"
-            student_output_file_name = output_file_basename + self.student_extension
+
+            if self.outfile_index is None:
+                file_base_name = os.path.splitext(os.path.basename(self.infile))[0]
+                output_file_basename = f"{args_str.replace(' ', '_')}_{file_base_name}"
+            else:
+                output_file_basename = os.path.splitext(os.path.basename(self.args[self.outfile_index]))
+
             key_output_file_name = output_file_basename + self.key_file_extension
+            student_output_file_name = output_file_basename + self.student_extension
 
             # Skip the expected output generation if it is not needed.
+            key_output = ""
             if case_type in (SemanticCaseType.OUTPUT_CHECK,SemanticCaseType.FILE_AND_OUTPUT_CHECK):
                 with patch("sys.stdout", new = StringIO()) as captured_output:
                     self.key_program(*self.args,
                                 os.path.join(self.local_path_prefix, self.infile))
                     key_output = captured_output.getvalue()
 
+            template_placeholder_values = {
+                "args_str"                  : args_str,
+                "student_output_file_name"  : student_output_file_name,
+                "key_output"                : key_output,
+                "file_comparison_program"   : "differ.sh",
+                "key_output_file_name"      : key_output_file_name,
+                # vv Python-specific vv
+                "method_name"               : "",
+                "module_name"               : "",
+                "test_class"                : "",
+            }
+
             # Format the Case block and add it to the string 
-            return case_block.format(args_str=args_str,
-                                                input_file_name=self.infile,
-                                                file_comparison_program="differ.sh",
-                                                key_output_file_name=key_output_file_name,
-                                                student_output_file_name=student_output_file_name,
-                                                key_output=key_output)
+            case_block = self.VPL_CASE_TEMPLATES[case_type]
+            all_case_blocks += case_block.format(**template_placeholder_values) + "\n"
+
+        return all_case_blocks
+
 
 
 class VPLProgramTester:
@@ -191,24 +212,27 @@ class VPLProgramTester:
     def __init__(self, 
                  local_path_prefix: str, 
                  key_program: Callable, 
-                 student_extension: str = "_student_results.txt",
-                 key_file_extension: str = "_key_results.txt",
                  test_cases: List[VPLTestCase] = []):
         self.local_path_prefix = local_path_prefix
         self.key_program = key_program
-        self.student_extension = student_extension
-        self.key_file_extension = key_file_extension
         self.test_cases = test_cases
+
+
+    def add_test_case(self, test_case):
+        self.test_cases.append(test_case)
 
 
     def make_vpl_evaluate_cases(self):
 
         case_blocks = ""
         for vpl_test_case in self.test_cases:
-            case_blocks += vpl_test_case.make_test_case_block()
+            case_blocks += vpl_test_case.make_all_case_blocks()
 
         write_to_file = "vpl_evaluate.cases"
         write_to_file = os.path.join(self.local_path_prefix, write_to_file)
 
         findmodules.overwrite_file_if_different(write_to_file, case_blocks)
 
+
+if __name__ == "__main__":
+    print("Are you lost? You look lost.")
