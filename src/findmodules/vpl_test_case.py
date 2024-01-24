@@ -95,27 +95,27 @@ class VPLTestCase:
 
     VPL_CASE_TEMPLATES = {
         VPLCaseType.OUTPUT_COMPARISON           :(
-              "Case = Output" + CASE_NAME_COMMON_FORMAT,
+              "Case = Output" + CASE_NAME_COMMON_FORMAT
             + "\n    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT
             + "\n    Output = \"{key_output}\""
             + "\n    Grade reduction = 100%"
             + "\n"
         ),
         VPLCaseType.RUN_FOR_FILE_GEN            :(
-              "Case = Run" + CASE_NAME_COMMON_FORMAT,
-            + "\n    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT + "{student_output_file_name}"
+              "Case = Run" + CASE_NAME_COMMON_FORMAT
+            + "\n    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT
             + "\n    Grade reduction = 100%"
             + "\n"
         ),
         VPLCaseType.RUN_FOR_FILE_GEN_OUTPUT_COMP:(
-              "Case = Check stdout, Generate file" + CASE_NAME_COMMON_FORMAT,
-            + "\n    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT + "{student_output_file_name}"
+              "Case = Check stdout, Generate file" + CASE_NAME_COMMON_FORMAT
+            + "\n    Program arguments =" + PROGRAM_ARGS_COMMON_FORMAT
             + "\n    Output = \"{key_output}\""
             + "\n    Grade reduction = 100%"
             + "\n"
         ),
         VPLCaseType.FILE_COMPARISON             :(
-              "Case = Generate file" + CASE_NAME_COMMON_FORMAT
+              "Case = Check output file" + CASE_NAME_COMMON_FORMAT
             + "\n    Program to run = {file_comparison_program}"
             + "\n    Program arguments = {key_output_file_name} {student_output_file_name}"
             + "\n    Output = \"Empty diff. #nonewsisgoodnews\""
@@ -139,27 +139,66 @@ class VPLTestCase:
         )
     }
  
-    student_extension = "_student_results.txt",
-    key_file_extension = "_key_results.txt",
+    student_extension = "_student_results.txt"
+    key_file_extension = "_key_results.txt"
 
 
     def __init__(self, 
                  case_type: SemanticCaseType, 
+                 key_program: Callable,
+                 local_path_prefix: str,
                  program_arguments: Tuple = (),
                  outfile_index: int = None,
+                 key_outfile: str = "",
                  program_uses_input: bool = True):
 
         if program_uses_input and program_arguments == ():
             raise ValueError("The program must have some arguments! Override with program_uses_input=False")
 
         self.case_type = case_type
+        self.key_program = key_program
+        self.local_path_prefix = local_path_prefix
         self.args = program_arguments
         self.outfile_index = outfile_index
+        self.key_outfile = key_outfile
         self.uses_input = program_uses_input
+
+        self.args_str = " ".join([str(arg) for arg in self.args])
 
 
     def __repr__(self):
         return f"VPLTestCase({self.case_type}, program_arguments={self.args}, outfile_index={self.outfile_index}, program_uses_input={self.uses_input}"
+    
+
+    def get_output_file_basename(self):
+        return f"{self.args_str.replace(' ', '_')}"
+
+
+    def get_student_output_file_name(self):
+        if self.outfile_index is not None:
+            return os.path.basename(self.args[self.outfile_index])
+            # Do we need the basename() call?
+
+        return self.get_key_output_file_base_name() + self.student_extension
+    
+
+    def get_key_output_file_name(self):
+            if self.key_outfile == "":
+                return self.get_output_file_basename() + self.key_file_extension
+        
+            return self.key_outfile
+    
+
+    def get_key_output(self):
+        # Skip the expected output generation if it is not needed.
+        key_output = ""
+        if self.case_type in (SemanticCaseType.OUTPUT_CHECK,SemanticCaseType.FILE_AND_OUTPUT_CHECK):
+            with patch("sys.stdout", new = StringIO()) as captured_output:
+                self.key_program(*self.args)#,
+                            # os.path.join(self.local_path_prefix, self.infile))
+                key_output = captured_output.getvalue()
+
+        return key_output
     
 
     def make_all_case_blocks(self):
@@ -167,32 +206,12 @@ class VPLTestCase:
         for case_type in self.CASE_TYPE_FOR_SEMANTIC[self.case_type]:
 
             # Compile all the things that need to be substituted into the Case template.
-
-            args_str = " ".join([str(arg) for arg in self.args])
-
-            if self.outfile_index is None:
-                file_base_name = os.path.splitext(os.path.basename(self.infile))[0]
-                output_file_basename = f"{args_str.replace(' ', '_')}_{file_base_name}"
-            else:
-                output_file_basename = os.path.splitext(os.path.basename(self.args[self.outfile_index]))
-
-            key_output_file_name = output_file_basename + self.key_file_extension
-            student_output_file_name = output_file_basename + self.student_extension
-
-            # Skip the expected output generation if it is not needed.
-            key_output = ""
-            if case_type in (SemanticCaseType.OUTPUT_CHECK,SemanticCaseType.FILE_AND_OUTPUT_CHECK):
-                with patch("sys.stdout", new = StringIO()) as captured_output:
-                    self.key_program(*self.args,
-                                os.path.join(self.local_path_prefix, self.infile))
-                    key_output = captured_output.getvalue()
-
             template_placeholder_values = {
-                "args_str"                  : args_str,
-                "student_output_file_name"  : student_output_file_name,
-                "key_output"                : key_output,
+                "args_str"                  : self.args_str,
+                "student_output_file_name"  : self.get_student_output_file_name(),
+                "key_output_file_name"      : self.get_key_output_file_name(),
+                "key_output"                : self.get_key_output(),
                 "file_comparison_program"   : "differ.sh",
-                "key_output_file_name"      : key_output_file_name,
                 # vv Python-specific vv
                 "method_name"               : "",
                 "module_name"               : "",
@@ -211,19 +230,17 @@ class VPLProgramTester:
 
     def __init__(self, 
                  local_path_prefix: str, 
-                 key_program: Callable, 
                  test_cases: List[VPLTestCase] = []):
         self.local_path_prefix = local_path_prefix
-        self.key_program = key_program
         self.test_cases = test_cases
-
+        
 
     def add_test_case(self, test_case):
         self.test_cases.append(test_case)
 
 
     def make_vpl_evaluate_cases(self):
-
+        print("Making vpl_evaluate.cases...", end="")
         case_blocks = ""
         for vpl_test_case in self.test_cases:
             case_blocks += vpl_test_case.make_all_case_blocks()
@@ -231,7 +248,10 @@ class VPLProgramTester:
         write_to_file = "vpl_evaluate.cases"
         write_to_file = os.path.join(self.local_path_prefix, write_to_file)
 
-        findmodules.overwrite_file_if_different(write_to_file, case_blocks)
+        if not findmodules.overwrite_file_if_different(write_to_file, case_blocks, verbose=False):
+            print("no changes...", end="")
+        
+        print("done.")
 
 
 if __name__ == "__main__":
