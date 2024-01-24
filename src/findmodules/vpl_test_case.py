@@ -186,19 +186,57 @@ class VPLTestCase:
             if self.key_outfile == "":
                 return self.get_output_file_basename() + self.key_file_extension
         
-            return self.key_outfile
+            return os.path.basename(self.key_outfile)
+    
+    @staticmethod
+    def is_file_name(string):
+        if type(string) is not str:
+            return False
+        
+        valid_file_endings = [
+            ".csv",
+            ".txt",
+        ]
+
+        return any(string.endswith(valid_ending) for valid_ending in valid_file_endings)
+    
+
+    def add_local_path_prefix_to_file_names(self) -> Tuple:
+        modified_args = []
+        for arg in self.args:
+            if VPLTestCase.is_file_name(arg):
+                modified_args.append(os.path.join(self.local_path_prefix, arg))
+            else:
+                modified_args.append(arg)
+        
+        return tuple(modified_args)
     
 
     def get_key_output(self):
         # Skip the expected output generation if it is not needed.
         key_output = ""
+        
         if self.case_type in (SemanticCaseType.OUTPUT_CHECK,SemanticCaseType.FILE_AND_OUTPUT_CHECK):
             with patch("sys.stdout", new = StringIO()) as captured_output:
-                self.key_program(*self.args)#,
+                args_with_abs_paths = self.add_local_path_prefix_to_file_names()
+                self.key_program(*args_with_abs_paths)#,
                             # os.path.join(self.local_path_prefix, self.infile))
                 key_output = captured_output.getvalue()
 
         return key_output
+    
+
+    def get_case_file_args_string(self):
+        modified_args_list = []
+        for arg in self.args:
+            if type(arg) is str and self.is_file_name(arg):
+                modified_args_list.append(
+                    os.path.basename(arg)
+                )
+            else:
+                modified_args_list.append(arg)
+
+        return " ".join([str(arg) for arg in modified_args_list])
     
 
     def make_all_case_blocks(self):
@@ -207,7 +245,7 @@ class VPLTestCase:
 
             # Compile all the things that need to be substituted into the Case template.
             template_placeholder_values = {
-                "args_str"                  : self.args_str,
+                "args_str"                  : self.get_case_file_args_string(),
                 "student_output_file_name"  : self.get_student_output_file_name(),
                 "key_output_file_name"      : self.get_key_output_file_name(),
                 "key_output"                : self.get_key_output(),
