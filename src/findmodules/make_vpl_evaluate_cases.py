@@ -9,25 +9,31 @@ from unittest.mock import patch
 from io import StringIO
 from enum import Enum
 
-def overwrite_file_if_different(file_path, new_contents):
+def overwrite_file_if_different(file_path, new_contents, verbose=True) -> bool:
     # Two cases for wrtiting the file:
     # 1. It doesn't exist.
     # 2. It's out of date.
-    
+    did_write_file = False
     try:
         with open(file_path, 'r') as old_file_object:
             old_file_contents = old_file_object.read()
 
         if old_file_contents != new_contents:
             raise FileNotFoundError
+        
+        if verbose:
+            print("no changes...", end="")
 
-        print("no changes...", end="")
     except FileNotFoundError:
         with open(file_path, "w") as new_file_object:
             new_file_object.write(new_contents)
+        
+        did_write_file = True
+    
+    if verbose:
+        print("done.")
 
-    print("done.")
-
+    return did_write_file
 
 def get_unittest_subclasses(unittest_module_dict) -> dict:
     unittest_subclasses = {}
