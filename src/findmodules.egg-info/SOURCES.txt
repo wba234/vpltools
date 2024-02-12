@@ -6,6 +6,7 @@ src/findmodules/findmodules.py
 src/findmodules/make_vpl_evaluate_cases.py
 src/findmodules/setup.py
 src/findmodules/test_sample.py
+src/findmodules/vpl_test_case.py
 src/findmodules/vpl_unittest.py
 src/findmodules.egg-info/PKG-INFO
 src/findmodules.egg-info/SOURCES.txt

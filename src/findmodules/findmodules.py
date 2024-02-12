@@ -40,10 +40,17 @@ def has_no_globals(module) -> bool:
             continue
         
         # Not know or suspected built in, and not callable means GLOBAL VARIABLE! >:-(
-        # raise BasicTestFailedError(f"Global object '{obj_name}' of type '{type(obj_value)}' detected!")
-        return False
+        raise BasicTestFailedError("Global variables are forbidden in this assignment!"
+                                + f"Global object '{obj_name}' of type '{type(obj_value)}' detected!")
     
     return True
+
+
+def has_main_function(module) -> bool:
+    if hasattr(module, "main"):
+        return True
+    
+    raise BasicTestFailedError(f"This assignment requires a main function!")
 
 # ----------------------------------------------------------------------------------------
 
@@ -68,16 +75,23 @@ def find_all_modules_in_dir(use_directory=None, remove_tests=True, verbose=False
     return python_files
 
 
-def run_basic_tests(module):
+def run_basic_tests(module, skip_basic_tests):
     basic_test_messages = [
-        (hasattr(module, "main"), "A main() function is required!"),
-        (has_no_globals(module), "Global variables are forbidden in this assignment!"),
-        # TODO: No global variables!
+        (has_main_function, (module)),
+        (has_no_globals, (module)),
+        # NOTE: Add other tests as desired.
     ]
     
-    for basic_test in basic_test_messages:
-        if not basic_test[0]:
-            raise BasicTestFailedError(basic_test[1])
+    tests_remaining_to_skip = skip_basic_tests.copy()
+
+    for test_function, test_args in basic_test_messages:
+        if test_function.__name__ in tests_remaining_to_skip:
+            tests_remaining_to_skip.remove(test_function.__name__)
+        else:
+            test_function(*test_args)
+
+    for trts in tests_remaining_to_skip:
+        print(f"Warning: Unable to skip unknown test '{trts}'")
 
 
 def student_module_name(use_directory, ignore_when_testing=[None], module_extension=DEFAULT_EXTENSION, keep_extension=True):
@@ -123,11 +137,13 @@ def student_module_name(use_directory, ignore_when_testing=[None], module_extens
     return module_name
 
 
-def import_student_module(use_directory, ignore_when_testing=[None], module_extension=DEFAULT_EXTENSION, basic_tests=True):
+def import_student_module(use_directory, ignore_when_testing=[None], module_extension=DEFAULT_EXTENSION, basic_tests=True, skip_basic_tests=[]):
     '''
     Searches the local directory for files ending in module_extension. 
     Ignores module_to_test, and things starting with "test".
     ignore_when_testing can be a string, or a list of strings, with our without the module_extension.
+    Set basic_tests to False to skip all standard tests.
+    Supply a list of basic tests to skip if you only want to run some of them.
     '''
     module = student_module_name(
         use_directory, 
@@ -138,7 +154,7 @@ def import_student_module(use_directory, ignore_when_testing=[None], module_exte
     imported_module = importlib.import_module(module)
 
     if basic_tests:
-        run_basic_tests(imported_module) # Raises excception on any failures. Deliberately not caught.
+        run_basic_tests(imported_module, skip_basic_tests) # Raises excception on any failures. Deliberately not caught.
 
     return imported_module
 
