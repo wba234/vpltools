@@ -2,6 +2,10 @@ import unittest
 import os
 
 class OpaqueTest(unittest.TestCase):
+    '''
+    A class for testing programs as black boxes, with no visible internal structure.
+    Provides automatic location of executable binary files.
+    '''
     # A collection of common file extensions and items which should not be the executable.
     # This is not a robuse way to achieve this goal.
     NON_EXECUTABLE_EXTENTIONS = [
@@ -40,3 +44,8 @@ class OpaqueTest(unittest.TestCase):
             raise RuntimeError(f"Couldn't automatically identify executable.\nCandidates: {executables}")
         
         cls.executable = os.path.join(this_dir_name, executables[0])
+
+    @classmethod
+    def getExecutable(cls):
+        return cls.executable
+    
