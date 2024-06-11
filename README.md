@@ -5,6 +5,7 @@ A module called ```findmodules``` which facilitates use of the Moodle VPLs by se
 - Add other basic tests?
 - publish this to PPI?
 - Move the basic tests into an abstract base class for CS1 unittests.
+- Move the ```make_vpl_cases``` or whatever into a base class common to all python-based testing. See ```OpaqueTest``` for an example of how to do this.
 - Is setup.py in the wrong folder?
 
 ## Example Usages
