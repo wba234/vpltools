@@ -10,7 +10,7 @@ A module called ```findmodules``` which facilitates use of the Moodle VPLs by se
 
 ## Example Usages
 1. Minimal Use. Find student's file, and run tests.
-```
+```python
 import os.path
 import findmodules
 
@@ -18,7 +18,7 @@ lab = findmodules.import_student_module(os.path.dirname(__file__))
 ```
 
 2. More involved: compare a student's code against known good code which serves as an answer key. I recommend that this be combined with number 3, below.
-```
+```python
 import os.path
 import importlib
 import findmodules
@@ -29,7 +29,7 @@ lab = findmodules.import_student_module(os.path.dirname(__file__), ignore_when_t
 ```
 
 3. Make ```vpl_evaluate.cases```, to show tests individually in the Moodle assignment. I recommend that this approach be combined with number 2 above.
-```
+```python
 import findmodules
 import unittest
 
