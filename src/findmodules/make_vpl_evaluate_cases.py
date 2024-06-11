@@ -36,6 +36,10 @@ def overwrite_file_if_different(file_path, new_contents, verbose=True) -> bool:
     return did_write_file
 
 def get_unittest_subclasses(unittest_module_dict) -> dict:
+    '''
+    Searches globals() for objects which are subclasses of unittest.TestCase.
+    Returns a dictionary: ClassName : ClassObject
+    '''
     unittest_subclasses = {}
     # for key, value in unittest_module.__dict__.items():
     for key, value in unittest_module_dict.items():
@@ -58,7 +62,10 @@ def get_test_method_names(unittest_subclass):
 
 def make_cases_file(module_path, test_methods, include_pylint):
     # TODO: make this use VPL_CASE_PARTS.
-    vpl_eval_path = os.path.join(os.path.dirname(module_path), "vpl_evaluate.cases")
+
+    vpl_eval_path = os.path.join(
+        module_path if os.path.isdir(module_path) else os.path.dirname(module_path), 
+        "vpl_evaluate.cases")
     # vpl_evaluate_cases_fo = open(vpl_eval_path, "w")
     module_name, extension = os.path.splitext(os.path.basename(module_path))
 
@@ -93,13 +100,15 @@ grade reduction = 0%
     overwrite_file_if_different(vpl_eval_path, all_test_cases_string)
 
 
-def make_vpl_evaluate_cases(module_name, module_dict_, include_pylint=True):
+def make_vpl_evaluate_cases(module_name, module_dict, include_pylint=True):
     print("Making vpl_evaluate.cases...", end="")
-
+    # TODO: This malarky is NOT necessary. See findmofules.opaquetest.tearDownClass() 
+    # for an example of how to to this more simply.
     test_methods = {} # keys are class names, values are lists of test method names
-    subclasses_dict = get_unittest_subclasses(module_dict_)
+    subclasses_dict = get_unittest_subclasses(module_dict)
     for key, value in subclasses_dict.items():
         test_methods[key] = get_test_method_names(value)
+        # ClassName : [testMethodName, testMethodName, ...]
 
     make_cases_file(module_name, test_methods, include_pylint)
     print("done.")

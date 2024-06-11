@@ -2,6 +2,7 @@ import unittest
 import os
 import subprocess
 import findmodules
+import sys
 
 class OpaqueTest(unittest.TestCase):
     '''
@@ -32,8 +33,6 @@ class OpaqueTest(unittest.TestCase):
         "timeout"       : 10,
         "check"         : True, # Raise CalledProcessError on non-zero exit code.
     }
-    
-    SUBCLASS_FILE = None
 
 
     @classmethod
@@ -41,24 +40,29 @@ class OpaqueTest(unittest.TestCase):
         '''
         Perform any needed setup before all classes.
         '''
-        this_dir_name = os.path.dirname(os.path.abspath(cls.SUBCLASS_FILE))
+        cls.this_dir_name = os.path.dirname(sys.modules[cls.__module__].__file__)
         executables = [ 
-            file_name for file_name in os.listdir(this_dir_name) 
+            file_name for file_name in os.listdir(cls.this_dir_name) 
             if not any(file_name.lower().endswith(nen) for nen in cls.NON_EXECUTABLE_EXTENTIONS)
         ]
         if len(executables) != 1:
             raise RuntimeError(f"Couldn't automatically identify executable.\nCandidates: {executables}")
         
-        cls.executable = os.path.join(this_dir_name, executables[0])
+        cls.executable = os.path.join(cls.this_dir_name, executables[0])
 
 
     @classmethod
     def tearDownClass(cls):
         '''
-        Perform any necessary teardown of the program being tested here.
+        Find all names of unittest methods, and write them to a file in the same 
+        directory as the subclass of this.
         '''
-        test_names = cls.find_test_names() # refers to superclass
-        findmodules.make_vpl_evaluate_cases(cls.SUBCLASS_FILE, globals(), include_pylint=False)
+        test_names = unittest.getTestCaseNames(cls, unittest.loader.TestLoader.testMethodPrefix) # refers to subclass
+        findmodules.make_cases_file(
+            cls.this_dir_name, 
+            { cls.__name__ : [test_method_name for test_method_name in test_names] },
+            False
+        )
         return super().tearDownClass()
 
 
@@ -67,9 +71,6 @@ class OpaqueTest(unittest.TestCase):
         return cls.executable
 
 
+    @classmethod
     def run_program(self, cli_args: list[str], input_string: str):
         return subprocess.run([self.executable] + cli_args, input=input_string, **self.SUBPROCESS_RUN_OPTIONS)
-    
-    @classmethod
-    def find_test_names(cls):
-        return unittest.getTestCaseNames(cls, unittest.loader.TestLoader.testMethodPrefix)
