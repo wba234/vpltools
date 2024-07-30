@@ -34,21 +34,124 @@ class OpaqueTest(unittest.TestCase):
         "check"         : True, # Raise CalledProcessError on non-zero exit code.
     }
 
+    MAIN_NAME = "main"
+    SRC_EXTENSION = ".c"
+    SRC_ERR = 42
+
+    GCC_EXEC_NAME = "a.out"
+    GCC_COMPILE = [ "gcc", "-lm", "-o", GCC_EXEC_NAME ]
+    GCC_MAKE = [ "make" ]
+    
+    THIS_DIR_NAME: str = None
+
 
     @classmethod
-    def setUpClass(cls):
+    def findExecutables(cls) -> list[str]:
+        '''
+        Don't maintain a list of executables, or source files. 
+        In theory, both of these could be generated automatically.
+        '''
+        return [ 
+            file_name for file_name in os.listdir(cls.THIS_DIR_NAME)
+            if not any(file_name.lower().endswith(nee) for nee in cls.NON_EXECUTABLE_EXTENTIONS)
+        ]
+
+
+    @classmethod
+    def findSourceFiles(cls) -> list[str]:
+        '''
+        Don't maintain a list of executables, or source files. 
+        In theory, both of these could be generated automatically.
+        '''
+        return [ 
+            file_name for file_name in os.listdir(cls.THIS_DIR_NAME) 
+            if file_name.endswith(cls.SRC_EXTENSION) 
+        ]
+
+
+    @classmethod
+    def compileOneFileOrMain(cls) -> int:
+        '''
+        Returns the return code from gcc, or cls.SOURCE_ERR, to indicate that source.
+        Can only be called after setUpClass has initalized class attributes.
+        '''
+        source_files = cls.findSourceFiles()
+
+        # Try to find main...
+        try:
+            main_index = source_files.index(cls.MAIN_NAME + cls.SRC_EXTENSION)
+        except ValueError:
+            # ...or the only one...
+            if len(source_files) != 1:
+                return cls.SRC_ERR
+        
+            main_index = 0
+        
+        # ...so it can be compiled.
+        # gcc_command = cls.GCC_COMPILE + [os.path.join(cls.THIS_DIR_NAME, source_files[main_index])]
+        gcc_command = cls.GCC_COMPILE + [source_files[main_index]]
+        return subprocess.run(gcc_command, cwd=cls.THIS_DIR_NAME).returncode
+
+
+    @classmethod
+    def compileAllSourceFiles(cls) -> int:
+        '''
+        Returns the return code from gcc, or raises ValueError.
+        Can only be called after setUpClass has initalized class attributes.
+        '''
+        source_files = cls.findSourceFiles()
+        if not source_files:
+            return cls.SRC_ERR
+        
+        for i in range(len(source_files)):
+            source_files[i] = os.path.join(cls.THIS_DIR_NAME, source_files[i])
+
+        return subprocess.run(cls.GCC_COMPILE + source_files, cwd=cls.THIS_DIR_NAME).returncode
+
+
+    @classmethod
+    def compileWithMake(cls) -> int:
+        '''
+        Returns the return code from the command "make":
+        0 : success
+        2 : make encountered errors
+        '''
+        return subprocess.run(cls.GCC_MAKE, cwd=cls.THIS_DIR_NAME).returncode
+
+
+
+    @classmethod
+    def setUpClass(cls, attempt_compilation=True):
         '''
         Perform any needed setup before all classes.
         '''
-        cls.this_dir_name = os.path.dirname(sys.modules[cls.__module__].__file__)
-        executables = [ 
-            file_name for file_name in os.listdir(cls.this_dir_name) 
-            if not any(file_name.lower().endswith(nen) for nen in cls.NON_EXECUTABLE_EXTENTIONS)
-        ]
+        cls.THIS_DIR_NAME = os.path.dirname(sys.modules[cls.__module__].__file__)
+
+        executables = cls.findExecutables()
+        if len(executables) != 1 and attempt_compilation:
+            # Some things we can reasonably try to do to compile:
+            # 0. Compile the only .c file found.
+            # 0. Compile the main.c file, assume that it will #include the others.
+            # 1. Compile all the .c files.
+            # 2. Try to use the make utility.
+            compilation_strategies = [ 
+                cls.compileOneFileOrMain, 
+                cls.compileAllSourceFiles, 
+                cls.compileWithMake
+            ]
+
+            for compile in compilation_strategies:
+                status = compile()
+                if status == 0:
+                    break
+            
+            executables = cls.findExecutables()
+
+
         if len(executables) != 1:
             raise RuntimeError(f"Couldn't automatically identify executable.\nCandidates: {executables}")
         
-        cls.executable = os.path.join(cls.this_dir_name, executables[0])
+        cls.executable = os.path.join(cls.THIS_DIR_NAME, executables[0])
 
 
     @classmethod
@@ -59,7 +162,7 @@ class OpaqueTest(unittest.TestCase):
         '''
         test_names = unittest.getTestCaseNames(cls, unittest.loader.TestLoader.testMethodPrefix) # refers to subclass
         findmodules.make_cases_file(
-            cls.this_dir_name, 
+            cls.THIS_DIR_NAME, 
             { cls.__name__ : [test_method_name for test_method_name in test_names] },
             False
         )
