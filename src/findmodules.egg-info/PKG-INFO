@@ -11,23 +11,39 @@ Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 License-File: LICENSE.txt
 
-# Automatic Module Discovery
-A module called ```findmodules``` which facilitates use of the Moodle VPLs by searching the current working directory for files which may be student work. There is also a feature which can generate ```vpl_evaluate.cases``` files automatically. This has the advantage of showing individual tests on the VPL web page, instead of one big test. The hope is that this makes debugging more approachable. See examples below for how to do this.
-
 # TODO
--  Move the basic tests into an abstract base class for CS1 unittests.
+- Add other basic tests?
+- publish this to PPI?
+- Move the basic tests into an abstract base class for CS1 unittests.
+- Move the ```make_vpl_cases``` or whatever into a base class common to all python-based testing. See ```OpaqueTest``` for an example of how to do this.
+- Is setup.py in the wrong folder?
+
+# Automatic Module Discovery
+```findmodules``` facilitates use of the Moodle VPLs by searching the current working directory for files which may be student work. There is also a feature which can generate ```vpl_evaluate.cases``` files automatically. This has the advantage of showing individual tests on the VPL web page, instead of one big test. The hope is that this makes debugging more approachable for students. 
+
+The focus of this package was originally only on Python, using ```unittest```; no other languages were testable. This changed in version 0.7, which introduced ```OpaqueTest```, a way to facilitate end-to-end testing of compiled programs, but still using Python's ```unittest```. 
+
+See examples below for how to use this module.
 
 ## Example Usages
-1. Minimal Use. Find student's file, and run tests.
-```
+### 1. Minimal Use. Find student's file, and run tests.
+```python
 import os.path
 import findmodules
+import unittest
 
 lab = findmodules.import_student_module(os.path.dirname(__file__))
+
+class MyTestCaseClass(unittest.TestCase):
+   # ...Tests go here.
+
+if __name__ == "__main__":
+   unittest.main()
 ```
 
-2. More involved: compare a student's code against known good code which serves as an answer key. I recommend that this be combined with number 3, below.
-```
+### 2. Compare against answer Key. 
+I recommend that this be combined with number 3, below.
+```python
 import os.path
 import importlib
 import findmodules
@@ -37,8 +53,9 @@ key = importlib.import_module(MODULE_TO_TEST)
 lab = findmodules.import_student_module(os.path.dirname(__file__), ignore_when_testing=[MODULE_TO_TEST])
 ```
 
-3. Make ```vpl_evaluate.cases```, to show tests individually in the Moodle assignment. I recommend that this approach be combined with number 2 above.
-```
+### 3. Show tests individually in the VPL assignment. 
+I recommend that this approach be combined with number 2 above. This adds a separate entry into ```vpl_evaluate.cases``` for each method in ```MyTestCaseClass```.
+```python
 import findmodules
 import unittest
 
@@ -58,25 +75,55 @@ class MyTestCaseClass(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 ```
-You can use this exactly in your test files. **Note:** There is a snippet for this boilerplate in the ```baileycs1``` repository, under ```/.vscode```. The format of the snippet (JSON) is a little specific to VSCode, but the code can be extracted relatively easily. Type ```test``` in a snakefile to trigger the snippet.
+You can use this exactly in your test files. **Note:** There is a snippet for this boilerplate in the ```baileycs1``` repository, under ```/.vscode```. The format of the snippet (JSON) is a little specific to VSCode, but the code can be extracted relatively easily. Type ```test``` in a snakefile to trigger the snippet. Other snippets, e.g., for ```OpaqueTest``` below, are also available. If you are a VSCode enthusiast who would like these, contact the author, who will be delighted to furnish them to you.
 
-## Comparing Output Files with Pairs of Test Cases
+### 4. ***New in 0.7:*** End-to-end test C programs.
+```OpaqueTest``` is a subclass of ```unittest.TestCase``` which can be used to perform end-to-end testing of non-Python programs. At this point, only C programs are supported. The class uses the ```setUpClass``` method to find the executable, and ```subprocess.run``` to execute it, piping in stdin, and capturing stdout. If no executable is found, compilation will be attempted. Several compilation strategies are attempted:
+   1. If only one source file, compile it.
+   2. If many source files, compile only main.
+   3. If many source files, compile all by passing to compiler.
+   4. Invoke make utility.
+
+Example usage of ```OpaqueTest```:
+```python
+import unittest
+from findmodules import OpaqueTest
+
+class test_class_name(OpaqueTest):
+    '''
+    Describe any peculiarities of the program being tested here.
+    '''
+    def test_function_name(self):
+        '''
+        Describe any peculiarities of the function being tested here.
+        '''
+        proc = self.run_program(cli_arg_list , stdin_string)
+        # Analyze proc.stdout here...
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+### 5. Comparing Output Files
+To evaluate a file generated by a student's program, a pair of test cases may be needed.
+The first test case runs the student's program to generate the file. This test always passes, provided that the program runs without crashing. The second test case invokes an external program (the python interpreter) which analyzes the file produced by the first test case.
+
 This is a slightly more esoteric use of this module. If you want to compare output files, you can generate a ```vpl_evaluate.cases``` file which will do this by calling ```make_vpl_case_pairs()```.
 
-This function was originally designed for use with the brute force knapsack lab in ```bailey_algorithms```, which asked students to write the results to a file. The file content could be quite large, and 
-therefore, more than the 32Kb of standard output which VPL can can handle.
+This function was originally designed for use with the brute force knapsack lab in ```bailey_algorithms```, which asked students to write the results to a file. The file content could be quite large, and therefore, more than the 32Kb of standard output which VPL can can handle.
 
-the function generates a pair of VPL Cases for each semantic test case. VPL can only 
+The function generates a pair of VPL Cases for each semantic test case. VPL can only 
 invoke one program per Case. This means that a single case cannot invoke both the 
-student's program (e.g. bfk.c, or bfk.java) and the test program (e.g. differ.sh).
+student's program (e.g. ```bfk.c```, or ```bfk.java```) and the test program (e.g. differ.sh).
 In theory, the test program could contain a routine for finding, compiling, and running
 the student's program, then checking the output file against the answer key, but that 
-would require custom logic for each programming language. BUT THAT'S VPL's JOB, DAMMIT!
+would require custom logic for each programming language. BUT THAT'S VPL's JOB, DAMMIT! ***Note:*** As of version 0.7, this logic exists, but only for C programs.
 
 Instead, this script generates pairs of VPL Cases; a "Run", which invokes the student's
 program directly, and a "Check" which compares the student's output file with the answer
 key. This is possible because VPL Cases are not fully sandboxed; the file generated by
 the "Run" Case **still exists** when the "Check" Case is run afterwards.
+
 
 ## Installation
 1. Download this repository.
@@ -122,11 +169,11 @@ A summary of the commands used is below, along with the suggested directory stru
    |- tests/
    |- src/
    |  |- findmodules/
-   |  |  |- example.py
-   |  |  |- __init__.py
-   |- license.txt
-   |- readme.md
-   |- pyproject.toml
+   |  |  `- example.py
+   |  |  `- __init__.py
+   `- license.txt
+   `- readme.md
+   `- pyproject.toml
 ```
 
 The commands are fun from within the top-level module directory: ```~/Documents/findmodules/```
