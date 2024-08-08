@@ -94,7 +94,7 @@ def run_basic_tests(module, skip_basic_tests):
         print(f"Warning: Unable to skip unknown test '{trts}'")
 
 
-def student_module_name(use_directory, ignore_when_testing=[None], module_extension=DEFAULT_EXTENSION, keep_extension=True):
+def student_module_name(use_directory, ignore_when_testing=[None], module_extension=DEFAULT_EXTENSION, keep_extension=True, return_contents=False):
 
     module_names = find_all_modules_in_dir(use_directory, remove_tests=True, extension=module_extension)
 
@@ -112,7 +112,8 @@ def student_module_name(use_directory, ignore_when_testing=[None], module_extens
             continue
         
         # Add the module extension if it's not already there.
-        if not ignored_module.endswith(module_extension):
+        # Don't mess with the extension of this module.
+        if not ignored_module.endswith(module_extension) and not ignored_module == os.path.basename(__file__):
             ignored_module += module_extension
 
         # Remove the module, unless it's not there, in which case, warn about it.
@@ -131,13 +132,21 @@ def student_module_name(use_directory, ignore_when_testing=[None], module_extens
         raise ImportError(f"No other {module_extension} files found! Exiting...")
     
     module_name = module_names[0]
+
+    if return_contents:
+        with open(os.path.join(use_directory, module_name), "r") as module_fo:
+            module_contents = module_fo.read()
+
     if not keep_extension:
         module_name = module_name[:-1*len(module_extension)]
+
+    if return_contents:
+        return module_name, module_contents
 
     return module_name
 
 
-def import_student_module(use_directory, ignore_when_testing=[None], module_extension=DEFAULT_EXTENSION, basic_tests=True, skip_basic_tests=[]):
+def import_student_module(use_directory, ignore_when_testing=[None], module_extension=DEFAULT_EXTENSION, basic_tests=True, skip_basic_tests=[], return_contents=False):
     '''
     Searches the local directory for files ending in module_extension. 
     Ignores module_to_test, and things starting with "test".
@@ -145,21 +154,34 @@ def import_student_module(use_directory, ignore_when_testing=[None], module_exte
     Set basic_tests to False to skip all standard tests.
     Supply a list of basic tests to skip if you only want to run some of them.
     '''
-    module = student_module_name(
+    return_tuple = student_module_name(
         use_directory, 
         ignore_when_testing=ignore_when_testing, 
         module_extension=module_extension,
-        keep_extension=False)
+        keep_extension=False, 
+        return_contents=return_contents)
+
+    if return_contents:
+        module, module_contents = return_tuple
+    else:
+        module = return_tuple
     
     imported_module = importlib.import_module(module)
 
     if basic_tests:
         run_basic_tests(imported_module, skip_basic_tests) # Raises excception on any failures. Deliberately not caught.
-
+    
+    if return_contents:
+        return module, module_contents
+    
     return imported_module
 
 
 def import_key_module(use_directory, module_extension=DEFAULT_EXTENSION):
+    '''
+    Searches working directory for a file starting with "key_" and ending with 
+    module_extension. Raises RuntimeError if exactly 1 file is not found.
+    '''
     key_files = [
         file for file in os.listdir(use_directory)
         if file.lower().startswith("key_") and file.endswith(module_extension)
