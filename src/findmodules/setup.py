@@ -4,7 +4,7 @@ with open("README.md", "r") as fo:
     long_description = fo.read()
 
 setup(name='findmodules',
-      version='0.12',
+      version='0.13',
       description=('Facilitates Moodle VPL use by searching the current '
                    +'working directory for other python files.'),
       long_description=long_description,
