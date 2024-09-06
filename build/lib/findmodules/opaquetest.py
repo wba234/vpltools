@@ -3,8 +3,9 @@ import os
 import subprocess
 import findmodules
 import sys
+import abc
 
-class OpaqueTest(unittest.TestCase):
+class OpaqueTest(unittest.TestCase, abc.ABC):
     '''
     A class for testing programs as black boxes, with no visible internal structure.
     Provides automatic location of executable binary files.
@@ -27,6 +28,17 @@ class OpaqueTest(unittest.TestCase):
         ".txt",
     ]
 
+    @classmethod
+    def hasNonExecutableExtension(cls, file_name) -> bool:
+        return any(file_name.endswith(extension) for extension in cls.NON_EXECUTABLE_EXTENTIONS)
+
+    # Ignore these when searching for executable files.
+    VPL_SYSTEM_FILES = [ 
+        "vpl_test",
+        ".vpl_tester",
+        "vpl_execution",
+    ]
+
     SUBPROCESS_RUN_OPTIONS = {
         "capture_output": True, 
         "text"          : True,
@@ -44,6 +56,15 @@ class OpaqueTest(unittest.TestCase):
     
     THIS_DIR_NAME: str = None
 
+    @classmethod
+    @abc.abstractmethod
+    def getModuleName(cls) -> str:
+        '''
+        This is the implementation. It just has to be in the child class.
+        '''
+        # return __file__ # Put this in the child class.
+        # This function should never be called:
+        raise NotImplementedError
 
     @classmethod
     def findExecutables(cls) -> list[str]:
@@ -51,11 +72,12 @@ class OpaqueTest(unittest.TestCase):
         Don't maintain a list of executables, or source files. 
         In theory, both of these could be generated automatically.
         '''
-        return [ 
-            file_name for file_name in os.listdir(cls.THIS_DIR_NAME)
-            if not any(file_name.lower().endswith(nee) for nee in cls.NON_EXECUTABLE_EXTENTIONS)
-        ]
+        possible_executables = []
+        for file_name in os.listdir(cls.THIS_DIR_NAME):
+            if not cls.hasNonExecutableExtension(file_name) and file_name not in cls.VPL_SYSTEM_FILES:
+                possible_executables.append(file_name)
 
+        return possible_executables
 
     @classmethod
     def findSourceFiles(cls) -> list[str]:
@@ -162,7 +184,8 @@ class OpaqueTest(unittest.TestCase):
         '''
         test_names = unittest.getTestCaseNames(cls, unittest.loader.TestLoader.testMethodPrefix) # refers to subclass
         findmodules.make_cases_file(
-            cls.THIS_DIR_NAME, 
+            # cls.THIS_DIR_NAME, # Should be __name__ of module which contains subclass of opaquetest
+            cls.getModuleName(),
             { cls.__name__ : [test_method_name for test_method_name in test_names] },
             False
         )
