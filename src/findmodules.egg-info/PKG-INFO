@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: findmodules
-Version: 0.13
+Version: 0.14
 Summary: A package which facilitates use of the Moodle VPLs by searching the current working directory for other python files.
 Author-email: William Bailey <william.bailey@centre.edu>
 Project-URL: Homepage, https://github.com/wba234/baileycs1
