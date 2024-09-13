@@ -26,6 +26,8 @@ class OpaqueTest(unittest.TestCase, abc.ABC):
         "__pycache__",
         ".old",
         ".txt",
+        ".gif",
+        ".DS_Store"
     ]
 
     @classmethod
@@ -182,7 +184,7 @@ class OpaqueTest(unittest.TestCase, abc.ABC):
         Find all names of unittest methods, and write them to a file in the same 
         directory as the subclass of this.
         '''
-        test_names = unittest.getTestCaseNames(cls, unittest.loader.TestLoader.testMethodPrefix) # refers to subclass
+        test_names = unittest.defaultTestLoader.getTestCaseNames(cls)
         findmodules.make_cases_file(
             # cls.THIS_DIR_NAME, # Should be __name__ of module which contains subclass of opaquetest
             cls.getModuleName(),
