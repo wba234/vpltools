@@ -201,4 +201,4 @@ class OpaqueTest(unittest.TestCase, abc.ABC):
 
     @classmethod
     def run_program(self, cli_args: list[str], input_string: str):
-        return subprocess.run([self.executable] + cli_args, input=input_string, **self.SUBPROCESS_RUN_OPTIONS)
+        return subprocess.run([self.executable] + cli_args, input=input_string, cwd=os.path.dirname(self.getModuleName()), **self.SUBPROCESS_RUN_OPTIONS)
