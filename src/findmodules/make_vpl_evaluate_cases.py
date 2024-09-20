@@ -76,13 +76,14 @@ def make_cases_file(module_path, test_methods, include_pylint):
             # command_string = f"python3.9 -m unittest {module_name}.{test_class}.{method_name}"
             # print(command_string)
 
-            test_case_format = f'''
-Case = {method_name}
-program to run = /usr/bin/python3
-program arguments = -m unittest {module_name}.{test_class}.{method_name}
-output = /.*OK/i
-grade reduction = 100%
-'''
+            test_case_format = ( 
+                  f"Case = {method_name}\n"
+                + f"program to run = /usr/bin/python3\n"
+                + f"program arguments = -m unittest {module_name}.{test_class}.{method_name}\n"
+                + f"expected exit code = 0\n"
+                + f"output = \"/.*OK/i\"\n"
+                + f"grade reduction = 100%\n\n"
+            )
             all_test_cases_string += test_case_format + "\n"
 
     # end for
