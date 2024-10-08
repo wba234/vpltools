@@ -2,7 +2,7 @@ import unittest
 import re
 
 __unittest = True # Keep, to silence tracebacks.
-
+# TODO: These should both use match, or fullmatch, or provide a flag.
 class RegexTestCase(unittest.TestCase):
     TEXT = "text"
     CAPT = "capture"
@@ -24,7 +24,7 @@ class RegexTestCase(unittest.TestCase):
         pattern should be returned by exerciseN(), ...
         '''
         test_pattern = re.compile(pattern)
-        match = test_pattern.fullmatch(text_to_match_and_capture[self.TEXT])
+        match = test_pattern.match(text_to_match_and_capture[self.TEXT])
         self.assertIsNotNone(
             match, 
             msg=f"The pattern didn't match '{text_to_match_and_capture}', but should have.")
