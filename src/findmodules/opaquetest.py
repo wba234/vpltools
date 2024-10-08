@@ -5,6 +5,8 @@ import findmodules
 import sys
 import abc
 
+__unittest = True
+
 class OpaqueTest(unittest.TestCase, abc.ABC):
     '''
     A class for testing programs as black boxes, with no visible internal structure.
