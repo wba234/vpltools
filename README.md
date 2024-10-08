@@ -13,11 +13,15 @@ The focus of this package was originally only on Python, using ```unittest```; n
 See examples below for how to use this module.
 
 ## Example Usages
+Note that ```__unittest = True``` takes advantage of some mechanisms in ```unittest``` itself for hiding stack frames which are part of the ```unittest``` module. Stack frames which come from modules in which ```__unittest``` is set to ```True``` are hidden. This will leave only student code shown in the traceback, which should make them easier to read, and reduce confusion.
+
 ### 1. Minimal Use. Find student's file, and run tests.
 ```python
 import os.path
 import findmodules
 import unittest
+
+__unittest = True
 
 lab = findmodules.import_student_module(os.path.dirname(__file__))
 
@@ -45,6 +49,8 @@ I recommend that this approach be combined with number 2 above. This adds a sepa
 ```python
 import findmodules
 import unittest
+
+__unittest = True
 
 class MyTestCaseClass(unittest.TestCase):
 
@@ -75,6 +81,8 @@ Example usage of ```OpaqueTest```:
 ```python
 import unittest
 from findmodules import OpaqueTest
+
+__unittest = True
 
 class test_class_name(OpaqueTest):
     '''
