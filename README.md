@@ -1,4 +1,6 @@
 # TODO
+- SQL Unittets need their 
+    ```findmodules.make_vpl_evaluate_cases(__file__, locals(), include_pylint=False)``` at the bottom rolled into a ```tearDownClass``` method. This goes for all the various types of tests. NO BOILERPLATE.
 - Add other basic tests?
 - publish this to PPI?
 - Move the basic tests into an abstract base class for CS1 unittests.
