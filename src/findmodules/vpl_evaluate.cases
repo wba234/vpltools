@@ -1,0 +1,24 @@
+Case = test_bonk
+program to run = /usr/bin/python3
+program arguments = -m unittest opaquetest.TestCharacterCounter.test_bonk
+expected exit code = 0
+output = "/.*OK/i"
+grade reduction = 100%
+
+
+Case = test_one_char
+program to run = /usr/bin/python3
+program arguments = -m unittest opaquetest.TestCharacterCounter.test_one_char
+expected exit code = 0
+output = "/.*OK/i"
+grade reduction = 100%
+
+
+Case = test_two_characters
+program to run = /usr/bin/python3
+program arguments = -m unittest opaquetest.TestCharacterCounter.test_two_characters
+expected exit code = 0
+output = "/.*OK/i"
+grade reduction = 100%
+
+

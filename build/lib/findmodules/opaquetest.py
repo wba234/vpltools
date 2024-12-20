@@ -5,16 +5,14 @@ import findmodules
 import sys
 import abc
 
-__unittest = True
-
 class OpaqueTest(unittest.TestCase, abc.ABC):
     '''
     A class for testing programs as black boxes, with no visible internal structure.
     Provides automatic location of executable binary files.
     '''
     # A collection of common file extensions and items which should not be the executable.
-    # This doesn't feel like a robust way to achieve this goal.
-    NON_EXECUTABLE_EXTENSIONS = [
+    # This is not a robuse way to achieve this goal.
+    NON_EXECUTABLE_EXTENTIONS = [
         ".c",
         ".h",
         ".cpp",
@@ -28,13 +26,11 @@ class OpaqueTest(unittest.TestCase, abc.ABC):
         "__pycache__",
         ".old",
         ".txt",
-        ".gif",
-        ".DS_Store"
     ]
 
     @classmethod
     def hasNonExecutableExtension(cls, file_name) -> bool:
-        return any(file_name.endswith(extension) for extension in cls.NON_EXECUTABLE_EXTENSIONS)
+        return any(file_name.endswith(extension) for extension in cls.NON_EXECUTABLE_EXTENTIONS)
 
     # Ignore these when searching for executable files.
     VPL_SYSTEM_FILES = [ 
@@ -99,7 +95,7 @@ class OpaqueTest(unittest.TestCase, abc.ABC):
     def compileOneFileOrMain(cls) -> int:
         '''
         Returns the return code from gcc, or cls.SOURCE_ERR, to indicate that source.
-        Can only be called after setUpClass has initialized class attributes.
+        Can only be called after setUpClass has initalized class attributes.
         '''
         source_files = cls.findSourceFiles()
 
@@ -123,7 +119,7 @@ class OpaqueTest(unittest.TestCase, abc.ABC):
     def compileAllSourceFiles(cls) -> int:
         '''
         Returns the return code from gcc, or raises ValueError.
-        Can only be called after setUpClass has initialized class attributes.
+        Can only be called after setUpClass has initalized class attributes.
         '''
         source_files = cls.findSourceFiles()
         if not source_files:
@@ -183,46 +179,18 @@ class OpaqueTest(unittest.TestCase, abc.ABC):
     @classmethod
     def tearDownClass(cls):
         '''
-        Find all names of unittest.TestCase test_* methods, and write them to 
-        a file in the same directory as the subclass of this.
+        Find all names of unittest methods, and write them to a file in the same 
+        directory as the subclass of this.
         '''
-        test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
-        vpl_test_tuples = OpaqueTest.makeVPLTestTuples(test_suite)
-        findmodules.make_cases_file_from_list(
-            cls.THIS_DIR_NAME,
-            vpl_test_tuples,
+        test_names = unittest.getTestCaseNames(cls, unittest.loader.TestLoader.testMethodPrefix) # refers to subclass
+        findmodules.make_cases_file(
+            # cls.THIS_DIR_NAME, # Should be __name__ of module which contains subclass of opaquetest
+            cls.getModuleName(),
+            { cls.__name__ : [test_method_name for test_method_name in test_names] },
             False
         )
         return super().tearDownClass()
-    
 
-    @staticmethod
-    def makeVPLTestTuples(test_suite) -> list[tuple[str]]:
-        '''
-        Walks the TestSuite hierarchy looking for TestCase objects.
-        When found, adds a tuple containing:
-            tc.__module__
-            tc.__class__.__name__
-            tc._testMethodName
-        to the list. Returns the list.
-        '''
-        vpl_test_tuples = []
-        for test_item in test_suite._tests:
-            if isinstance(test_item, unittest.TestSuite):
-                vpl_test_tuples.extend(
-                    OpaqueTest.makeVPLTestTuples(test_item)
-                )
-            elif isinstance(test_item, unittest.TestCase):
-                vpl_test_tuples.append(
-                    (test_item.__module__, 
-                     test_item.__class__.__name__, 
-                     test_item._testMethodName)
-                )
-            else:
-                raise TypeError(f"Bruh. I don't know what to do with a {test_item}")
-            
-        return vpl_test_tuples
-                
 
     @classmethod
     def getExecutable(cls):
@@ -231,4 +199,4 @@ class OpaqueTest(unittest.TestCase, abc.ABC):
 
     @classmethod
     def run_program(self, cli_args: list[str], input_string: str):
-        return subprocess.run([self.executable] + cli_args, input=input_string, cwd=os.path.dirname(self.getModuleName()), **self.SUBPROCESS_RUN_OPTIONS)
+        return subprocess.run([self.executable] + cli_args, input=input_string, **self.SUBPROCESS_RUN_OPTIONS)
