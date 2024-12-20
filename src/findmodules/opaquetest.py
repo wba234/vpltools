@@ -10,8 +10,8 @@ class OpaqueTest(unittest.TestCase):
     Provides automatic location of executable binary files.
     '''
     # A collection of common file extensions and items which should not be the executable.
-    # This is not a robuse way to achieve this goal.
-    NON_EXECUTABLE_EXTENTIONS = [
+    # This doesn't feel like a robust way to achieve this goal.
+    NON_EXECUTABLE_EXTENSIONS = [
         ".c",
         ".h",
         ".cpp",
@@ -53,7 +53,7 @@ class OpaqueTest(unittest.TestCase):
         '''
         return [ 
             file_name for file_name in os.listdir(cls.THIS_DIR_NAME)
-            if not any(file_name.lower().endswith(nee) for nee in cls.NON_EXECUTABLE_EXTENTIONS)
+            if not any(file_name.lower().endswith(nee) for nee in cls.NON_EXECUTABLE_EXTENSIONS)
         ]
 
 
@@ -73,7 +73,7 @@ class OpaqueTest(unittest.TestCase):
     def compileOneFileOrMain(cls) -> int:
         '''
         Returns the return code from gcc, or cls.SOURCE_ERR, to indicate that source.
-        Can only be called after setUpClass has initalized class attributes.
+        Can only be called after setUpClass has initialized class attributes.
         '''
         source_files = cls.findSourceFiles()
 
@@ -97,7 +97,7 @@ class OpaqueTest(unittest.TestCase):
     def compileAllSourceFiles(cls) -> int:
         '''
         Returns the return code from gcc, or raises ValueError.
-        Can only be called after setUpClass has initalized class attributes.
+        Can only be called after setUpClass has initialized class attributes.
         '''
         source_files = cls.findSourceFiles()
         if not source_files:
