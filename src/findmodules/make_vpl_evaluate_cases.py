@@ -60,13 +60,50 @@ def get_test_method_names(unittest_subclass):
     return test_method_names
 
 
-def make_cases_file(module_path, test_methods, include_pylint):
-    # TODO: make this use VPL_CASE_PARTS.
 
-    vpl_eval_path = os.path.join(
+
+def python3_case_block(test_method_description: tuple) -> str:
+    module_name, test_class, method_name = test_method_description
+    test_case_format = f'''
+Case = {method_name}
+program to run = /usr/bin/python3
+program arguments = -m unittest {module_name}.{test_class}.{method_name}
+output = /.*OK/i
+grade reduction = 100%
+'''
+    return test_case_format
+
+def pylint_case_block(module_name):
+    py_lint_test_case = f'''
+Case = PyLint Style Check
+program to run = /usr/bin/python3
+program arguments = -m pylint {module_name}
+output = /.*Your code has been rated at 10.00/10*/i
+grade reduction = 0%
+'''
+    return pylint_case_block
+
+
+def get_vpl_eval_path(module_path):
+    return os.path.join(
         module_path if os.path.isdir(module_path) else os.path.dirname(module_path), 
         "vpl_evaluate.cases")
-    # vpl_evaluate_cases_fo = open(vpl_eval_path, "w")
+
+
+def make_cases_file_from_list(module_path, test_method_list, include_pylint):
+    all_test_cases_string = ""
+
+    for test_method_description in test_method_list:
+        all_test_cases_string += python3_case_block(test_method_description)
+
+    if include_pylint:
+        all_test_cases_string += pylint_case_block(test_method_description)
+
+    vpl_eval_path = get_vpl_eval_path(module_path)
+    overwrite_file_if_different(vpl_eval_path, all_test_cases_string)
+
+
+def make_cases_file(module_path, test_methods, include_pylint):
     module_name, extension = os.path.splitext(os.path.basename(module_path))
 
     all_test_cases_string = ""
@@ -75,34 +112,23 @@ def make_cases_file(module_path, test_methods, include_pylint):
         for method_name in test_class_methods:
             # command_string = f"python3.9 -m unittest {module_name}.{test_class}.{method_name}"
             # print(command_string)
-
-            test_case_format = f'''
-Case = {method_name}
-program to run = /usr/bin/python3
-program arguments = -m unittest {module_name}.{test_class}.{method_name}
-output = /.*OK/i
-grade reduction = 100%
-'''
+            test_case_format += python3_case_block(test_method_tuple)
             all_test_cases_string += test_case_format + "\n"
 
     # end for
 
     if include_pylint:
-        py_lint_test_case = f'''
-Case = PyLint Style Check
-program to run = /usr/bin/python3
-program arguments = -m pylint {module_name}
-output = /.*Your code has been rated at 10.00/10*/i
-grade reduction = 0%
-'''
+        py_lint_test_case = pylint_case_block(module_name)
         all_test_cases_string += py_lint_test_case + "\n"
     # end if
+
+    vpl_eval_path = get_vpl_eval_path(module_path)
     overwrite_file_if_different(vpl_eval_path, all_test_cases_string)
 
 
 def make_vpl_evaluate_cases(module_name, module_dict, include_pylint=True):
     print("Making vpl_evaluate.cases...", end="")
-    # TODO: This malarky is NOT necessary. See findmofules.opaquetest.tearDownClass() 
+    # TODO: This malarky is NOT necessary. See findmodules.opaquetest.tearDownClass() 
     # for an example of how to to this more simply.
     test_methods = {} # keys are class names, values are lists of test method names
     subclasses_dict = get_unittest_subclasses(module_dict)

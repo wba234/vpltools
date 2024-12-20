@@ -157,17 +157,46 @@ class OpaqueTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         '''
-        Find all names of unittest methods, and write them to a file in the same 
-        directory as the subclass of this.
+        Find all names of unittest.TestCase test_* methods, and write them to 
+        a file in the same directory as the subclass of this.
         '''
-        test_names = unittest.getTestCaseNames(cls, unittest.loader.TestLoader.testMethodPrefix) # refers to subclass
-        findmodules.make_cases_file(
-            cls.THIS_DIR_NAME, 
-            { cls.__name__ : [test_method_name for test_method_name in test_names] },
+        test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
+        vpl_test_tuples = OpaqueTest.makeVPLTestTuples(test_suite)
+        findmodules.make_cases_file_from_list(
+            cls.THIS_DIR_NAME,
+            vpl_test_tuples,
             False
         )
         return super().tearDownClass()
+    
 
+    @staticmethod
+    def makeVPLTestTuples(test_suite) -> list[tuple[str]]:
+        '''
+        Walks the TestSuite hierarchy looking for TestCase objects.
+        When found, adds a tuple containing:
+            tc.__module__
+            tc.__class__.__name__
+            tc._testMethodName
+        to the list. Returns the list.
+        '''
+        vpl_test_tuples = []
+        for test_item in test_suite._tests:
+            if isinstance(test_item, unittest.TestSuite):
+                vpl_test_tuples.extend(
+                    OpaqueTest.makeVPLTestTuples(test_item)
+                )
+            elif isinstance(test_item, unittest.TestCase):
+                vpl_test_tuples.append(
+                    (test_item.__module__, 
+                     test_item.__class__.__name__, 
+                     test_item._testMethodName)
+                )
+            else:
+                raise TypeError(f"Bruh. I don't know what to do with a {test_item}")
+            
+        return vpl_test_tuples
+                
 
     @classmethod
     def getExecutable(cls):
