@@ -2,7 +2,10 @@ import os.path
 from enum import Enum
 from typing import Tuple, Callable, List
 from io import StringIO
-from unittest.mock import patch
+# from unittest.mock import patch
+# from unittest import TestCase
+import unittest
+import sys
 
 import findmodules
 
@@ -58,7 +61,7 @@ class TestCaseInfo(Enum):
 
 class VPLCaseParts(Enum):
     '''
-    Thic captures the idea that there are a few necessary components of a VPL Case
+    This captures the idea that there are a few necessary components of a VPL Case
     block. They make the most sense to appear in the order shown in the code, but 
     will work as long as CASE_NAME is first.
     '''
@@ -69,8 +72,61 @@ class VPLCaseParts(Enum):
     GRADE_REDUCTION = 5
 
 
+class VPLTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.THIS_DIR_NAME = os.path.dirname(sys.modules[cls.__module__].__file__)
+        return super().setUpClass()
 
-class VPLTestCase:
+
+    @classmethod
+    def tearDownClass(cls):
+        '''
+        Find all names of unittest.TestCase test_* methods, and write them to 
+        a file in the same directory as the subclass of this.
+        '''
+        test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
+        vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
+        findmodules.make_cases_file_from_list(
+            cls.THIS_DIR_NAME,
+            vpl_test_tuples,
+            False
+        )
+        return super().tearDownClass()
+    
+
+    @classmethod
+    def makeVPLTestTuples(cls, test_suite) -> list[tuple[str]]:
+        '''
+        Walks the TestSuite hierarchy looking for TestCase objects.
+        When found, adds a tuple containing:
+            tc.__module__
+            tc.__class__.__name__
+            tc._testMethodName
+        to the list. Returns the list.
+        '''
+        vpl_test_tuples = []
+        for test_item in test_suite._tests:
+            if isinstance(test_item, unittest.TestSuite):
+                vpl_test_tuples.extend(
+                    cls.makeVPLTestTuples(test_item)
+                )
+            elif isinstance(test_item, unittest.TestCase):
+                vpl_test_tuples.append(
+                    (test_item.__module__, 
+                     test_item.__class__.__name__, 
+                     test_item._testMethodName)
+                )
+            else:
+                raise TypeError(f"Bruh. I don't know what to do with a {test_item}")
+            
+        return vpl_test_tuples
+    
+
+
+
+# class VPLTestCase:
+class VPLCaseBlock:
 
     CASE_TYPE_FOR_SEMANTIC = {
         SemanticCaseType.FILE_CHECK             : (
@@ -118,7 +174,7 @@ class VPLTestCase:
               "Case = Check output file" + CASE_NAME_COMMON_FORMAT
             + "\n    Program to run = {file_comparison_program}"
             + "\n    Program arguments = {key_output_file_name} {student_output_file_name}"
-            + "\n    Output = \"Empty diff. #nonewsisgoodnews\""
+            + "\n    Output = \"Empty diff. #noNewsIsGoodNews\""
             + "\n    Grade reduction = 100%"
             + "\n"
         ),
@@ -132,7 +188,7 @@ class VPLTestCase:
         VPLCaseType.PYLINT_ANALYSIS             :(
               "Case = PyLiny Style Check"
             + "\n    Program to run = /usr/bin/python3"
-            + "\n    Program arugments = -m pylint {module_name}" # + " " + PYLINT_ARGS
+            + "\n    Program arguments = -m pylint {module_name}" # + " " + PYLINT_ARGS
             + "\n    Output = /.*Your code has been rated at 10.00/10*/i"
             + "\n    Grade reduction = 0%"
             + "\n"
@@ -217,7 +273,7 @@ class VPLTestCase:
         key_output = ""
         
         if self.case_type in (SemanticCaseType.OUTPUT_CHECK,SemanticCaseType.FILE_AND_OUTPUT_CHECK):
-            with patch("sys.stdout", new = StringIO()) as captured_output:
+            with unittest.patch("sys.stdout", new = StringIO()) as captured_output:
                 args_with_abs_paths = self.add_local_path_prefix_to_file_names()
                 self.key_program(*args_with_abs_paths)#,
                             # os.path.join(self.local_path_prefix, self.infile))
@@ -262,34 +318,6 @@ class VPLTestCase:
 
         return all_case_blocks
 
-
-
-class VPLProgramTester:
-
-    def __init__(self, 
-                 local_path_prefix: str, 
-                 test_cases: List[VPLTestCase] = []):
-        self.local_path_prefix = local_path_prefix
-        self.test_cases = test_cases
-        
-
-    def add_test_case(self, test_case):
-        self.test_cases.append(test_case)
-
-
-    def make_vpl_evaluate_cases(self):
-        print("Making vpl_evaluate.cases...", end="")
-        case_blocks = ""
-        for vpl_test_case in self.test_cases:
-            case_blocks += vpl_test_case.make_all_case_blocks()
-
-        write_to_file = "vpl_evaluate.cases"
-        write_to_file = os.path.join(self.local_path_prefix, write_to_file)
-
-        if not findmodules.overwrite_file_if_different(write_to_file, case_blocks, verbose=False):
-            print("no changes...", end="")
-        
-        print("done.")
 
 
 if __name__ == "__main__":
