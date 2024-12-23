@@ -273,7 +273,7 @@ class VPLCaseBlock:
         key_output = ""
         
         if self.case_type in (SemanticCaseType.OUTPUT_CHECK,SemanticCaseType.FILE_AND_OUTPUT_CHECK):
-            with unittest.patch("sys.stdout", new = StringIO()) as captured_output:
+            with unittest.mock.patch("sys.stdout", new = StringIO()) as captured_output:
                 args_with_abs_paths = self.add_local_path_prefix_to_file_names()
                 self.key_program(*args_with_abs_paths)#,
                             # os.path.join(self.local_path_prefix, self.infile))

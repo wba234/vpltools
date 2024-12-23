@@ -3,16 +3,18 @@ Provides functions for automatically generating vpl_evaluate.cases files
 for use with Moodle VPL assignments.
 '''
 import os.path
-import unittest
+# import unittest
 from typing import List, Tuple, Callable, Dict, Union
 from unittest.mock import patch
 from io import StringIO
 from enum import Enum
 
+
 def overwrite_file_if_different(file_path, new_contents, verbose=True) -> bool:
-    # Two cases for wrtiting the file:
+    # Two cases for writing the file:
     # 1. It doesn't exist.
     # 2. It's out of date.
+    print("Making vpl_evaluate.cases...", end="")
     did_write_file = False
     try:
         with open(file_path, 'r') as old_file_object:
@@ -35,53 +37,53 @@ def overwrite_file_if_different(file_path, new_contents, verbose=True) -> bool:
 
     return did_write_file
 
-def get_unittest_subclasses(unittest_module_dict) -> dict:
-    '''
-    Searches globals() for objects which are subclasses of unittest.TestCase.
-    Returns a dictionary: ClassName : ClassObject
-    '''
-    unittest_subclasses = {}
-    # for key, value in unittest_module.__dict__.items():
-    for key, value in unittest_module_dict.items():
-        try:
-            if issubclass(value, unittest.TestCase):
-                unittest_subclasses[key] = value
-        except TypeError:
-            pass # Needs to be a class.
+
+# def get_unittest_subclasses(unittest_module_dict) -> dict:
+#     '''
+#     Searches globals() for objects which are subclasses of unittest.TestCase.
+#     Returns a dictionary: ClassName : ClassObject
+#     '''
+#     unittest_subclasses = {}
+#     # for key, value in unittest_module.__dict__.items():
+#     for key, value in unittest_module_dict.items():
+#         try:
+#             if issubclass(value, unittest.TestCase):
+#                 unittest_subclasses[key] = value
+#         except TypeError:
+#             pass # Needs to be a class.
     
-    return unittest_subclasses
+#     return unittest_subclasses
 
-def get_test_method_names(unittest_subclass):
-    test_method_names = []
-    for key, value in unittest_subclass.__dict__.items():
-        if key.startswith("test") and callable(value):
-            test_method_names.append(key)
+# def get_test_method_names(unittest_subclass):
+#     test_method_names = []
+#     for key, value in unittest_subclass.__dict__.items():
+#         if key.startswith("test") and callable(value):
+#             test_method_names.append(key)
 
-    return test_method_names
+#     return test_method_names
 
 
 
 
 def python3_case_block(test_method_description: tuple) -> str:
     module_name, test_class, method_name = test_method_description
-    test_case_format = f'''
-Case = {method_name}
-program to run = /usr/bin/python3
-program arguments = -m unittest {module_name}.{test_class}.{method_name}
-output = /.*OK/i
-grade reduction = 100%
-'''
+    test_case_format = (f"Case = {method_name}" + "\n"
+        f"program to run = /usr/bin/python3"    + "\n"
+        f"program arguments = -m unittest {module_name}.{test_class}.{method_name}" + "\n"
+        f"output = /.*OK/i"                     + "\n"
+        f"grade reduction = 100%"               + "\n")
     return test_case_format
 
+
 def pylint_case_block(module_name):
-    py_lint_test_case = f'''
-Case = PyLint Style Check
-program to run = /usr/bin/python3
-program arguments = -m pylint {module_name}
-output = /.*Your code has been rated at 10.00/10*/i
-grade reduction = 0%
-'''
-    return pylint_case_block
+    pylint_test_case = (
+        f"Case = PyLint Style Check" + "\n"
+        f"program to run = /usr/bin/python3" + "\n"
+        f"program arguments = -m pylint {module_name}" + "\n"
+        f"output = /.*Your code has been rated at 10.00/10*/i" + "\n"
+        f"grade reduction = 0%" + "\n"
+    )
+    return pylint_test_case
 
 
 def get_vpl_eval_path(module_path):
@@ -103,41 +105,41 @@ def make_cases_file_from_list(module_path, test_method_list, include_pylint):
     overwrite_file_if_different(vpl_eval_path, all_test_cases_string)
 
 
-def make_cases_file(module_path, test_methods, include_pylint):
-    module_name, extension = os.path.splitext(os.path.basename(module_path))
+# def make_cases_file(module_path, test_methods, include_pylint):
+#     module_name, extension = os.path.splitext(os.path.basename(module_path))
 
-    all_test_cases_string = ""
+#     all_test_cases_string = ""
 
-    for test_class, test_class_methods in test_methods.items():
-        for method_name in test_class_methods:
-            # command_string = f"python3.9 -m unittest {module_name}.{test_class}.{method_name}"
-            # print(command_string)
-            test_case_format += python3_case_block(test_method_tuple)
-            all_test_cases_string += test_case_format + "\n"
+#     for test_class, test_class_methods in test_methods.items():
+#         for method_name in test_class_methods:
+#             # command_string = f"python3.9 -m unittest {module_name}.{test_class}.{method_name}"
+#             # print(command_string)
+#             test_case_format += python3_case_block(test_method_tuple)
+#             all_test_cases_string += test_case_format + "\n"
 
-    # end for
+#     # end for
 
-    if include_pylint:
-        py_lint_test_case = pylint_case_block(module_name)
-        all_test_cases_string += py_lint_test_case + "\n"
-    # end if
+#     if include_pylint:
+#         py_lint_test_case = pylint_case_block(module_name)
+#         all_test_cases_string += py_lint_test_case + "\n"
+#     # end if
 
-    vpl_eval_path = get_vpl_eval_path(module_path)
-    overwrite_file_if_different(vpl_eval_path, all_test_cases_string)
+#     vpl_eval_path = get_vpl_eval_path(module_path)
+#     overwrite_file_if_different(vpl_eval_path, all_test_cases_string)
 
 
-def make_vpl_evaluate_cases(module_name, module_dict, include_pylint=True):
-    print("Making vpl_evaluate.cases...", end="")
-    # TODO: This malarky is NOT necessary. See findmodules.opaquetest.tearDownClass() 
-    # for an example of how to to this more simply.
-    test_methods = {} # keys are class names, values are lists of test method names
-    subclasses_dict = get_unittest_subclasses(module_dict)
-    for key, value in subclasses_dict.items():
-        test_methods[key] = get_test_method_names(value)
-        # ClassName : [testMethodName, testMethodName, ...]
+# def make_vpl_evaluate_cases(module_name, module_dict, include_pylint=True):
+#     print("Making vpl_evaluate.cases...", end="")
+#     # TODO: This malarky is NOT necessary. See findmodules.opaquetest.tearDownClass() 
+#     # for an example of how to to this more simply.
+#     test_methods = {} # keys are class names, values are lists of test method names
+#     subclasses_dict = get_unittest_subclasses(module_dict)
+#     for key, value in subclasses_dict.items():
+#         test_methods[key] = get_test_method_names(value)
+#         # ClassName : [testMethodName, testMethodName, ...]
 
-    make_cases_file(module_name, test_methods, include_pylint)
-    print("done.")
+#     make_cases_file(module_name, test_methods, include_pylint)
+#     print("done.")
 
 
 CASE_PAIR_ARGS = "args"
@@ -160,7 +162,7 @@ def make_vpl_case_pairs(test_cases: List[Dict[str, Union[Tuple, str]]],
                     command line arguments of key_program, and the expected student program.
                 IN_FILE's value should be a string; the name of the file which the program 
                     will read from. This should be the N-1st command line argument of both 
-                    student and key progrmams. The Nth command line argument of both key 
+                    student and key programs. The Nth command line argument of both key 
                     and student programs should be the name of the output file to write to. 
                     That name is generated automatically by this function.
     local_path_prefix : The result of calling os.path.dirname(os.path.abspath(__file__)) 

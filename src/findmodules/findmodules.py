@@ -1,7 +1,7 @@
-# findmodule.py -- William Bailey -- 19 May 2023.
+# findmodules.py -- William Bailey -- 19 May 2023.
 '''
 A module for automatic discovery of student submission files in the 
-current working directory. Intend for use with Moodle VPL activities.
+current working directory. Intended for use with Moodle VPL activities.
 '''
 import importlib
 import os.path
@@ -90,8 +90,8 @@ def run_basic_tests(module, skip_basic_tests):
         else:
             test_function(*test_args)
 
-    for trts in tests_remaining_to_skip:
-        print(f"Warning: Unable to skip unknown test '{trts}'")
+    for tests in tests_remaining_to_skip:
+        print(f"Warning: Unable to skip unknown test '{tests}'")
 
 
 def student_module_name(use_directory, ignore_when_testing=[None], module_extension=DEFAULT_EXTENSION, keep_extension=True, return_contents=False):
@@ -169,7 +169,7 @@ def import_student_module(use_directory, ignore_when_testing=[None], module_exte
     imported_module = importlib.import_module(module)
 
     if basic_tests:
-        run_basic_tests(imported_module, skip_basic_tests) # Raises excception on any failures. Deliberately not caught.
+        run_basic_tests(imported_module, skip_basic_tests) # Raises exception on any failures. Deliberately not caught.
     
     if return_contents:
         return module, module_contents
