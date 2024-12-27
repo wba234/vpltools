@@ -203,14 +203,28 @@ class VPLTestCase(unittest.TestCase):
     def setUpClass(cls):
         abs_path_to_this_file = sys.modules[cls.__module__].__file__
         cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file)
+
+        if cls.keySourceFiles is None:
+            warnings.warn("keySourceFiles unspecified! Assuming no key program. \nInitialize this class attribute to an empty list to silence this warning.")
+            cls.keySourceFiles = []
+
         cls.compile_student_program()
         cls.compile_key_program()
+
+        cls.subprocess_run_options = {
+            "cwd"           : cls.THIS_DIR_NAME, # Needed for programs to write their output files to the right place.
+            "env"           : os.environ.update({ "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME }),    # Needed to find the compiled files.
+            "capture_output": True, 
+            "text"          : True,
+            "timeout"       : 10,
+            "check"         : True, # Raise CalledProcessError on non-zero exit code.
+        }
+        cls.program_execution_env = cls.subprocess_run_options["env"]
         return super().setUpClass()
 
 
     @classmethod
     def compile_student_program(cls):
-        
         student_source_files = [ 
             file for file in os.listdir(cls.THIS_DIR_NAME) 
             if file not in cls.keySourceFiles 
@@ -240,14 +254,9 @@ class VPLTestCase(unittest.TestCase):
     
     @staticmethod
     def detectLanguageAndMakeProgram(file_list: list[str], executable_name: str, output_file_name: str) -> SupportedLanguageProgram:
-        if file_list is None:
-            warnings.warn((
-                "keySourceFiles unspecified! Assuming no key program. "
-                + "Initialize this class attribute to an empty list to silence this warning."
-            ))
-
         if file_list == []:
             return 
+
         current_program_lang = None
         current_program_class = None
         source_files = []
@@ -316,16 +325,17 @@ class VPLTestCase(unittest.TestCase):
         
     @classmethod
     def run_program_helper(cls, executable: str, cli_args: list[str], input_str: str):
-        subprocess_run_options = {
-            "input"         : input_str,
-            "cwd"           : cls.THIS_DIR_NAME, # Needed for programs to write their output files to the right place.
-            "env"           : { "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME },    # Needed to find the compiled files.
-            "capture_output": True, 
-            "text"          : True,
-            "timeout"       : 10,
-            "check"         : True, # Raise CalledProcessError on non-zero exit code.
-        }
-        return subprocess.run([executable] + cli_args, **subprocess_run_options)
+        # subprocess_run_options = {
+        #     "input"         : input_str,
+        #     "cwd"           : cls.THIS_DIR_NAME, # Needed for programs to write their output files to the right place.
+        #     "env"           : os.environ.update({ "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME }),    # Needed to find the compiled files.
+        #     "capture_output": True, 
+        #     "text"          : True,
+        #     "timeout"       : 10,
+        #     "check"         : True, # Raise CalledProcessError on non-zero exit code.
+        # }
+        # cls.program_execution_env = subprocess_run_options["env"]
+        return subprocess.run([executable] + cli_args, input=input_str, **cls.subprocess_run_options)
     
 
     @classmethod

@@ -14,7 +14,7 @@ def overwrite_file_if_different(file_path, new_contents, verbose=True) -> bool:
     # Two cases for writing the file:
     # 1. It doesn't exist.
     # 2. It's out of date.
-    print("Making vpl_evaluate.cases...", end="")
+    print("\nMaking vpl_evaluate.cases...", end="")
     did_write_file = False
     try:
         with open(file_path, 'r') as old_file_object:
