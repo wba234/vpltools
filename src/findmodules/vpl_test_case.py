@@ -115,6 +115,11 @@ class SupportedLanguageProgram(abc.ABC):
     def compile(self, use_dir):
         # use_cwd = os.path.dirname(os.path.dirname(sys.modules[self.__module__].__file__))
         command = self.compilationCommand()
+
+        # Interpreted languages don't need compilation.
+        if command is None:
+            return
+        
         # Try the supplied compilation command
         compilation_process: subprocess.CompletedProcess = subprocess.run(
             command,
@@ -135,17 +140,34 @@ class SupportedLanguageProgram(abc.ABC):
                 + f"stderr={compilation_process.stderr}\n"
             )
         
+    @abc.abstractmethod
+    def run(self, **kwargs):
+        '''
+        Executes the program represented by the calling object in a subprocess.
+        '''
+        raise NotImplementedError
+        
 
 class CProgram(SupportedLanguageProgram):
     '''
     Represents a program written in C, 
     e.g., a student's submission, or an instructor's key program.
     '''
-    def __init__(self, executable_name, source_files, output_file_name):
-        return super().__init__(SUPPORTED_LANGUAGES["C"], [ "gcc", "-lm", "-o"], "main", executable_name, source_files, output_file_name)
+    def __init__(self, executable_name: str, source_files: list[str], output_file_name: str):
+        return super().__init__(
+            SUPPORTED_LANGUAGES["C"], 
+            [ "gcc", "-o", executable_name ] + source_files + ["-lm"], 
+            "main", 
+            executable_name, 
+            source_files, 
+            output_file_name)
 
     def compilationCommand(self):
-        return self.compilation_commands + [self.executable_name] + self.source_files
+        return self.compilation_commands
+    
+    def run(self, input="", **kwargs):
+        subprocess.run([self.executable_name], input=input, **kwargs)
+
     
 
 class CPPProgram(SupportedLanguageProgram):
@@ -153,11 +175,20 @@ class CPPProgram(SupportedLanguageProgram):
     Represents a program written in C++, 
     e.g., a student's submission, or an instructor's key program.
     '''
-    def __init__(self, executable_name, source_files, output_file_name):
-        return super().__init__(SUPPORTED_LANGUAGES["CPP"], [ "g++", "-lm", "-o"], "main", executable_name, source_files, output_file_name)
+    def __init__(self, executable_name: str, source_files: list[str], output_file_name: str):
+        return super().__init__(
+            SUPPORTED_LANGUAGES["CPP"], 
+            [ "g++", "-o", executable_name] + source_files + ["-lm"], 
+            "main", 
+            executable_name, 
+            source_files, 
+            output_file_name)
 
     def compilationCommand(self):
-        return self.compilation_commands + [self.executable_name] + self.source_files
+        return self.compilation_commands
+    
+    def run(self, input="", **kwargs):
+        return subprocess.run([self.executable_name], input=input, **kwargs)
     
 
 class JavaProgram(SupportedLanguageProgram):
@@ -171,18 +202,58 @@ class JavaProgram(SupportedLanguageProgram):
     def compilationCommand(self):
         return self.compilation_commands + self.source_files
 
+    def run(self, input="", **kwargs):
+        return subprocess.run(["java", self.executable_name], input=input, **kwargs)
+    
+
+class PythonProgram(SupportedLanguageProgram):
+    '''
+    Represents a program written in Python,
+    e.g., a student's submission, or an instructor's key program.
+    '''
+    PYTHON_COMMAND = "python3"
+    def __init__(self, executable_name: str, source_files: list[str], output_file_name: str):
+        if len(source_files) == 0:
+            raise ValueError("No input files found!")
+        elif len(source_files) == 1:
+            exec_name = source_files[0]
+        elif len(source_files) > 1:
+            if "main" in source_files:
+                exec_name = source_files.index("main")
+            else:
+                raise ValueError("If you have more than 1 file, you must name one of them main.py!")
+
+        return super().__init__(
+            SUPPORTED_LANGUAGES["PYTHON"], 
+            [], 
+            exec_name,
+            source_files[0], 
+            source_files, 
+            output_file_name=None)
+
+
+    def compilationCommand(self):
+        return None
+    
+    def run(self, input="", **kwargs):
+        return subprocess.run([self.PYTHON_COMMAND, self.executable_name])
+    
 
 SUPPORTED_LANGUAGES = {
     "C"     : SupportedLanguage("C", ".c"),
     "CPP"   : SupportedLanguage("C++", ".cpp"),
     "JAVA"  : SupportedLanguage("Java", ".java"),
+    "PYTHON": SupportedLanguage("Python", ".py")
 }
+
 
 OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE = {
     SUPPORTED_LANGUAGES["C"]    :   CProgram,
     SUPPORTED_LANGUAGES["CPP"]  :   CPPProgram,
     SUPPORTED_LANGUAGES["JAVA"] :   JavaProgram,
+    SUPPORTED_LANGUAGES["PYTHON"]:  PythonProgram,
 }
+
 
 class VPLTestCase(unittest.TestCase):
 
@@ -192,7 +263,6 @@ class VPLTestCase(unittest.TestCase):
         "vpl_execution",
         "vpl_evaluate.cases",
     ]
-
 
     keySourceFiles = None
     KEY_PROGRAM_NAME = "key_program"
@@ -210,8 +280,8 @@ class VPLTestCase(unittest.TestCase):
             warnings.warn("keySourceFiles unspecified! Assuming no key program. \nInitialize this class attribute to an empty list to silence this warning.")
             cls.keySourceFiles = []
 
-        cls.compile_student_program()
-        cls.compile_key_program()
+        cls.student_program = cls.compile_student_program()
+        cls.key_program = cls.compile_key_program()
 
         cls.subprocess_run_options = {
             "cwd"           : cls.THIS_DIR_NAME, # Needed for programs to write their output files to the right place.
@@ -241,6 +311,7 @@ class VPLTestCase(unittest.TestCase):
             cls.STUDENT_OUTFILE_NAME
         )
         student_program.compile(cls.THIS_DIR_NAME)
+        return student_program
 
 
     @classmethod
@@ -252,7 +323,7 @@ class VPLTestCase(unittest.TestCase):
         )
         if key_program is not None:
             key_program.compile(cls.THIS_DIR_NAME)
-
+            return key_program
     
     @staticmethod
     def detectLanguageAndMakeProgram(file_list: list[str], executable_name: str, output_file_name: str) -> SupportedLanguageProgram:
@@ -276,6 +347,8 @@ class VPLTestCase(unittest.TestCase):
                     source_files.append(file)
 
         # Call constructor for detected program class.
+        if current_program_class is None:
+            raise FileNotFoundError(f"No submission found, or couldn't resolve programming language! Found files: {file_list}")
         return current_program_class(executable_name, source_files, output_file_name)
         
 
