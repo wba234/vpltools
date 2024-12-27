@@ -101,15 +101,16 @@
         #     executables = cls.findExecutables()
 
 
-        # if len(executables) != 1:
-        #     raise RuntimeError(f"Couldn't automatically identify executable.\nCandidates: {executables}")
-        
-        # cls.executable = os.path.join(cls.THIS_DIR_NAME, executables[0])
-       
-
-        # Key program.
-        # for supported_language in cls.SUPPORTED_LANGUAGES:
-        #     if 
+    PROGRAM_TYPE_INFO = {
+        "key" : {
+            "executable_name"   :   "key_program",
+            "outfile_name"      :   "Key_output",
+        },
+        "student" : {
+            "executable_name"   :   "student_program",
+            "outfile_name"      :   "student_output",
+        },
+    }
 
 
     # @classmethod
