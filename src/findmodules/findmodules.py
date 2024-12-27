@@ -8,6 +8,8 @@ import os.path
 import warnings
 # from findmodules.make_vpl_evaluate_cases import make_vpl_evaluate_cases
 
+__unittest = True
+
 DEFAULT_EXTENSION = ".py"
 
 # ----------------------------------------------------------------------------------------

@@ -1,6 +1,9 @@
 import os.path
 import argparse
 import os
+
+__unittest = True
+
 class HistorySearcher:
     def __init__(self, commands_to_find):
         self.commands_to_find = commands_to_find

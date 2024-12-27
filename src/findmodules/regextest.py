@@ -2,6 +2,7 @@ import unittest
 import re
 
 __unittest = True # Keep, to silence tracebacks.
+
 # TODO: These should both use match, or fullmatch, or provide a flag.
 class RegexTestCase(unittest.TestCase):
     TEXT = "text"

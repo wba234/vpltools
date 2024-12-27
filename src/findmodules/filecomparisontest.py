@@ -1,7 +1,7 @@
-import os
+# import os
 
-import findmodules
-
+# import findmodules
+# __unittest = True
 # class 
 
 # class VPLProgramTester:

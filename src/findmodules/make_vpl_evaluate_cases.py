@@ -9,6 +9,7 @@ from unittest.mock import patch
 from io import StringIO
 from enum import Enum
 
+__unittest = True
 
 def overwrite_file_if_different(file_path, new_contents, verbose=True) -> bool:
     # Two cases for writing the file:

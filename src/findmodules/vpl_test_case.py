@@ -12,6 +12,8 @@ import sys
 from dataclasses import dataclass
 import findmodules
 
+__unittest = True
+
 # class SemanticCaseType(Enum):
 #     '''
 #     This captures the idea that there are basically three ways in which you can 

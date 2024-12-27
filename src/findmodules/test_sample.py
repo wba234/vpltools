@@ -1,7 +1,9 @@
 import unittest
-import vpl_unittest
+from findmodules import VPLTestCase
 
-class TestMyProgram(vpl_unittest.VPLunittest):
+__unittest = True
+
+class TestMyProgram(VPLTestCase):
 
     # def __init__(self, derived_class_location=__file__):
         # self.derived_class_location = derived_class_location
