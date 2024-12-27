@@ -5,8 +5,9 @@ import findmodules
 # class 
 
 # class VPLProgramTester:
-class FileComparisonTest(findmodules.OpaqueTest):
-    pass
+# class FileComparisonTest(findmodules.OpaqueTest):
+
+    # pass
 
     # def __init__(self, 
     #              local_path_prefix: str, 
