@@ -70,8 +70,10 @@ def python3_case_block(test_method_description: tuple) -> str:
     test_case_format = (f"Case = {method_name}" + "\n"
         f"program to run = /usr/bin/python3"    + "\n"
         f"program arguments = -m unittest {module_name}.{test_class}.{method_name}" + "\n"
+        f"expected exit code = 0\n"
         f"output = /.*OK/i"                     + "\n"
-        f"grade reduction = 100%"               + "\n")
+        f"grade reduction = 100%"               + "\n"
+        "\n")
     return test_case_format
 
 
