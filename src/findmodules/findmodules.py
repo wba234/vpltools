@@ -6,7 +6,6 @@ current working directory. Intended for use with Moodle VPL activities.
 import importlib
 import os.path
 import warnings
-# from findmodules.make_vpl_evaluate_cases import make_vpl_evaluate_cases
 
 __unittest = True
 

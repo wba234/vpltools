@@ -2,6 +2,7 @@
 Provides functions for automatically generating vpl_evaluate.cases files
 for use with Moodle VPL assignments.
 '''
+import os.path
 
 __unittest = True
 
@@ -54,6 +55,24 @@ def pylint_case_block(module_name):
         f"grade reduction = 0%" + "\n"
     )
     return pylint_test_case
+
+
+def get_vpl_eval_path(module_path):
+    return os.path.join(
+        module_path if os.path.isdir(module_path) else os.path.dirname(module_path), "vpl_evaluate.cases")
+
+
+def make_cases_file_from_list(module_path, test_method_list, include_pylint):
+    all_test_cases_string = ""
+
+    for test_method_description in test_method_list:
+        all_test_cases_string += python3_case_block(test_method_description)
+
+    if include_pylint:
+        all_test_cases_string += pylint_case_block(test_method_description)
+
+    vpl_eval_path = get_vpl_eval_path(module_path)
+    overwrite_file_if_different(vpl_eval_path, all_test_cases_string)
 
         
 if __name__ == '__main__':
