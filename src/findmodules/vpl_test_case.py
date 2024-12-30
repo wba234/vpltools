@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Tuple, Callable, List
 from io import StringIO
 import abc
+from copy import copy
 # from unittest.mock import patch
 # from unittest import TestCase
 import unittest
@@ -139,14 +140,16 @@ class SupportedLanguageProgram(abc.ABC):
                 + f"stdout={compilation_process.stdout}\n"
                 + f"stderr={compilation_process.stderr}\n"
             )
-        
+
+
     @abc.abstractmethod
-    def run(self, **kwargs):
+    def run(self, cli_args: list[str], input="", **kwargs) -> subprocess.CompletedProcess:
         '''
         Executes the program represented by the calling object in a subprocess.
         '''
         raise NotImplementedError
         
+
 
 class CProgram(SupportedLanguageProgram):
     '''
@@ -162,11 +165,13 @@ class CProgram(SupportedLanguageProgram):
             source_files, 
             output_file_name)
 
+
     def compilationCommand(self):
         return self.compilation_commands
     
-    def run(self, input="", **kwargs):
-        subprocess.run([self.executable_name], input=input, **kwargs)
+
+    def run(self, cli_args, input="", **kwargs):
+        return subprocess.run([self.executable_name, *cli_args], input=input, **kwargs)
 
     
 
@@ -184,12 +189,15 @@ class CPPProgram(SupportedLanguageProgram):
             source_files, 
             output_file_name)
 
+
     def compilationCommand(self):
         return self.compilation_commands
     
-    def run(self, input="", **kwargs):
-        return subprocess.run([self.executable_name], input=input, **kwargs)
+
+    def run(self, cli_args, input="", **kwargs):
+        return subprocess.run([self.executable_name, *cli_args], input=input, **kwargs)
     
+
 
 class JavaProgram(SupportedLanguageProgram):
     '''
@@ -199,12 +207,15 @@ class JavaProgram(SupportedLanguageProgram):
     def __init__(self, executable_name, source_files, output_file_name):
         return super().__init__(SUPPORTED_LANGUAGES["JAVA"], ["java"], "main", executable_name, source_files, output_file_name)
     
+
     def compilationCommand(self):
         return self.compilation_commands + self.source_files
 
-    def run(self, input="", **kwargs):
-        return subprocess.run(["java", self.executable_name], input=input, **kwargs)
+
+    def run(self, cli_args, input="", **kwargs):
+        return subprocess.run(["java", self.executable_name, *cli_args], input=input, **kwargs)
     
+
 
 class PythonProgram(SupportedLanguageProgram):
     '''
@@ -235,8 +246,9 @@ class PythonProgram(SupportedLanguageProgram):
     def compilationCommand(self):
         return None
     
-    def run(self, input="", **kwargs):
-        return subprocess.run([self.PYTHON_COMMAND, self.executable_name])
+
+    def run(self, cli_args, input="", **kwargs):
+        return subprocess.run([self.PYTHON_COMMAND, self.executable_name, *cli_args], input=input, **kwargs)
     
 
 SUPPORTED_LANGUAGES = {
@@ -285,13 +297,19 @@ class VPLTestCase(unittest.TestCase):
 
         cls.subprocess_run_options = {
             "cwd"           : cls.THIS_DIR_NAME, # Needed for programs to write their output files to the right place.
-            "env"           : os.environ.update({ "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME }),    # Needed to find the compiled files.
+            "env"           : copy(os.environ),
             "capture_output": True, 
             "text"          : True,
-            "timeout"       : 10,
+            # "timeout"       : 15,
             "check"         : True, # Raise CalledProcessError on non-zero exit code.
+
         }
+        # Add current directory to PATH, so we can find our compiled binaries.
+        cls.subprocess_run_options["env"].update({ "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME }),
+
+        # Add this as a class attribute, so others can find it; e.g. to use pexpect.spawn.
         cls.program_execution_env = cls.subprocess_run_options["env"]
+
         return super().setUpClass()
 
 
@@ -325,6 +343,7 @@ class VPLTestCase(unittest.TestCase):
             key_program.compile(cls.THIS_DIR_NAME)
             return key_program
     
+
     @staticmethod
     def detectLanguageAndMakeProgram(file_list: list[str], executable_name: str, output_file_name: str) -> SupportedLanguageProgram:
         if file_list == []:
@@ -398,8 +417,8 @@ class VPLTestCase(unittest.TestCase):
 
 
         
-    @classmethod
-    def run_program_helper(cls, executable: str, cli_args: list[str], input_str: str):
+    # @classmethod
+    # def run_program_helper(cls, executable: str, cli_args: list[str], input_str: str):
         # subprocess_run_options = {
         #     "input"         : input_str,
         #     "cwd"           : cls.THIS_DIR_NAME, # Needed for programs to write their output files to the right place.
@@ -410,17 +429,19 @@ class VPLTestCase(unittest.TestCase):
         #     "check"         : True, # Raise CalledProcessError on non-zero exit code.
         # }
         # cls.program_execution_env = subprocess_run_options["env"]
-        return subprocess.run([executable] + cli_args, input=input_str, **cls.subprocess_run_options)
+        # return subprocess.run([executable] + cli_args, input=input_str, **cls.subprocess_run_options)
     
 
     @classmethod
-    def run_program(cls, cli_args: list[str], input_string: str):
-        return cls.run_program_helper(cls.STUDENT_PROGRAM_NAME, cli_args, input_string)
+    def run_student_program(cls, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
+        return cls.student_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
+        # return cls.run_program_helper(cls.STUDENT_PROGRAM_NAME, cli_args, input_string)
     
     
     @classmethod
-    def run_key_program(cls, cli_args: list[str], input_string: str):
-        return cls.run_program_helper(cls.KEY_PROGRAM_NAME, cli_args, input_string)
+    def run_key_program(cls, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
+        return cls.key_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
+        # return cls.run_program_helper(cls.KEY_PROGRAM_NAME, cli_args, input_string)
 
 
 
