@@ -1,4 +1,11 @@
 # TODO
+- Write some notes about what new users should know:
+   - that they need to set ```keySourceFiles```
+   - that they can call ```run_student_program```
+   - that they can call ```run_key_program```
+   - that they can access ```student_py_module```
+   - that they can access ```key_py_module```
+   - that they can access output files.
 - Add a method for writing student and key output files to memory mapped files, for speed.
 - Add a method for writing each test output file from the key program to a separate file, so that they can be cached, for speed.
 - SQL Unittets need their 

@@ -78,8 +78,8 @@ def find_all_modules_in_dir(use_directory=None, remove_tests=True, verbose=False
 
 def run_basic_tests(module, skip_basic_tests):
     basic_test_messages = [
-        (has_main_function, (module)),
-        (has_no_globals, (module)),
+        (has_main_function, (module,)),
+        (has_no_globals, (module,)),
         # NOTE: Add other tests as desired.
     ]
     

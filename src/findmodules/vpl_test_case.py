@@ -4,6 +4,7 @@ import unittest
 import subprocess
 import os.path
 import warnings
+import importlib
 
 from copy import copy
 from dataclasses import dataclass
@@ -55,7 +56,7 @@ class SupportedLanguageProgram(abc.ABC):
         '''
         command = self.compilationCommand()
 
-        # Interpreted languages don't need compilation.
+        # Interpreted languages don't need compilation
         if command is None:
             return
         
@@ -247,8 +248,20 @@ class VPLTestCase(unittest.TestCase):
         # Add this as a class attribute, so others can find it; e.g. to use pexpect.spawn.
         cls.program_execution_env = cls.subprocess_run_options["env"]
 
+        # If the student program is a Python program, import it as a module.
+        cls.student_py_module = cls.import_as_py_module(cls.student_program)
+        cls.key_py_module = cls.import_as_py_module(cls.key_program)
+
         return super().setUpClass()
 
+
+    @classmethod
+    def import_as_py_module(cls, program: SupportedLanguageProgram):
+        if isinstance(program, PythonProgram):
+            return importlib.import_module(os.path.splitext(program.executable_name)[0])
+                # os.path.join(cls.THIS_DIR_NAME, program.executable_name))
+        return None
+    
 
     @classmethod
     def compile_student_program(cls):
