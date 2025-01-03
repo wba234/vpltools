@@ -207,7 +207,24 @@ OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE = {
 
 
 class VPLTestCase(unittest.TestCase):
+    '''
+    VPLTestCase provides most of the key functionality of vpltools.
+    - locates student submissions in the directory containing it's subclasses,
+    - automatically imports Python program as modules,
+    - compiles files automatically, and 
+    - provides the ability to run key and student programs in subprocesses.
 
+    BEST PRACTICES WHEN SUBCLASSING:
+    - explicitly set these class attributes:
+        - key_source_files  : list of files which constitute the instructor solution
+        - ignore_files      : list of files which should be ignored by vpltools 
+                              (e.g., starter code, alternative solutions)
+        - skip_basic_tests  : (Python submissions only) list of tests which should be 
+                              skipped when importing student solutions. Basic tests are 
+                              not run on Instructor solutions.
+        - include_pylint    : (Python submissions only) boolean flag indicating if a
+                              Pylint case should be added to vpl_evaluate.cases.
+    '''
     VPL_SYSTEM_FILES = [ 
         "vpl_test",
         ".vpl_tester",
@@ -217,9 +234,9 @@ class VPLTestCase(unittest.TestCase):
 
     key_source_files = None
     ignore_files = []
+    skip_basic_tests = []
     include_pylint = False
 
-    skip_basic_tests = []
 
     KEY_PROGRAM_NAME = "key_program"
     KEY_OUTFILE_NAME = "key_outfile"
@@ -229,6 +246,10 @@ class VPLTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        '''
+        Locates student and key modules, compiling if necessary.
+        Imports python modules, and runs basic tests on student modules.
+        '''
         abs_path_to_this_file = sys.modules[cls.__module__].__file__
         cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file)
 
@@ -262,6 +283,10 @@ class VPLTestCase(unittest.TestCase):
 
     @classmethod
     def import_as_py_module(cls, program: SupportedLanguageProgram, skip_basic_tests: list[FunctionType] = []):
+        '''
+        Returns a module object if program is a Python program, None otherwise. 
+        Runs basic tests if flag is set.
+        '''
         if isinstance(program, PythonProgram):
             module = importlib.import_module(os.path.splitext(program.executable_name)[0])
             vpltools.run_basic_tests(module, skip_basic_tests)
@@ -272,6 +297,11 @@ class VPLTestCase(unittest.TestCase):
 
     @classmethod
     def compile_student_program(cls):
+        '''
+        Language-agnostic logic for finding an compiling student programs. 
+        Returns a SupportedLanguageProgram object which can be used to 
+        invoke the program.
+        '''
         student_source_files = [ 
             file for file in os.listdir(cls.THIS_DIR_NAME) 
             if file not in cls.key_source_files 
@@ -292,6 +322,11 @@ class VPLTestCase(unittest.TestCase):
 
     @classmethod
     def compile_key_program(cls):
+        '''
+        Language-agnostic logic for finding an compiling key programs. 
+        Returns a SupportedLanguageProgram object which can be used to 
+        invoke the program.
+        '''
         key_program = cls.detectLanguageAndMakeProgram(
             cls.key_source_files,
             cls.KEY_PROGRAM_NAME,
@@ -304,6 +339,11 @@ class VPLTestCase(unittest.TestCase):
 
     @staticmethod
     def detectLanguageAndMakeProgram(file_list: list[str], executable_name: str, output_file_name: str) -> SupportedLanguageProgram:
+        '''
+        Searches file_list for items which have the extension of a supported programming language, 
+        using the first match found. Returns an object of the appropriate 
+        SupportedLanguageProgram subclass.
+        '''
         if file_list == []:
             return 
 
@@ -368,18 +408,26 @@ class VPLTestCase(unittest.TestCase):
                      test_item._testMethodName)
                 )
             else:
-                raise TypeError(f"Bruh. I don't know what to do with a {test_item}")
+                warnings.warn(f"Ignoring non-test object {test_item}, of type {type(test_item)}.")
             
         return vpl_test_tuples
     
 
     @classmethod
     def run_student_program(cls, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
+        '''
+        Execute the student's program in a subprocess, providing the given arguments, and 
+        input string. Uses the environment of the calling VPLTestCase subclass.
+        '''
         return cls.student_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
     
     
     @classmethod
     def run_key_program(cls, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
+        '''
+        Execute the key program in a subprocess, providing the given arguments, and 
+        input string. Uses the environment of the calling VPLTestCase subclass.
+        '''
         return cls.key_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
 
 
