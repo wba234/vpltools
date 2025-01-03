@@ -320,7 +320,7 @@ class VPLTestCase(unittest.TestCase):
 
         # Call constructor for detected program class.
         if current_program_class is None:
-            raise FileNotFoundError(f"No submission found, or couldn't resolve programming language! Found files: {file_list}")
+            raise FileNotFoundError(f"No submission found, or couldn't infer programming language! Found files: {file_list}")
         return current_program_class(executable_name, source_files, output_file_name)
 
 
