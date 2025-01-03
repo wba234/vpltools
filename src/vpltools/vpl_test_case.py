@@ -353,7 +353,7 @@ class VPLTestCase(unittest.TestCase):
         for file in file_list:
             for supported_lang, lang_program_class in OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE.items():
                 if current_program_lang is not None and current_program_lang != supported_lang:
-                    break # We're already found our language, and this is not it.
+                    continue # We're already found our language, and this is not it.
 
                 if current_program_lang is None and file.endswith(supported_lang.extension):
                     current_program_lang = supported_lang
