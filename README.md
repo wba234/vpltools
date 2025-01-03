@@ -9,15 +9,15 @@
 - Add a method for writing student and key output files to memory mapped files, for speed.
 - Add a method for writing each test output file from the key program to a separate file, so that they can be cached, for speed.
 - SQL Unittets need their 
-    ```findmodules.make_vpl_evaluate_cases(__file__, locals(), include_pylint=False)``` at the bottom rolled into a ```tearDownClass``` method. This goes for all the various types of tests. NO BOILERPLATE.
+    ```vpltools.make_vpl_evaluate_cases(__file__, locals(), include_pylint=False)``` at the bottom rolled into a ```tearDownClass``` method. This goes for all the various types of tests. NO BOILERPLATE.
 - Add other basic tests?
 - publish this to PPI?
 - Move the basic tests into an abstract base class for CS1 unittests.
 - Move the ```make_vpl_cases``` or whatever into a base class common to all python-based testing. See ```OpaqueTest``` for an example of how to do this.
 - Is setup.py in the wrong folder?
 
-# About Findmodules
-```findmodules``` provides several subclasses of ```unittest.TestCase``` which provide functionality specific to working with Moodle VPLs. These subclasses are:
+# About vpltools
+```vpltools``` provides several subclasses of ```unittest.TestCase``` which provide functionality specific to working with Moodle VPLs. These subclasses are:
 - ```VPLTestCase```
 - ```HistorySearcher```
 - ```RegexTestCase```
@@ -35,7 +35,7 @@ These are intended to be subclassed once for each individual assignment.
    - ```.STUDENT_OUTFILE_NAME``` and ```.KEY_OUTFILE_NAME```
    - ```.STUDENT_PROGRAM_NAME``` and ```.KEY_PROGRAM_NAME```
 
-```findmodules``` facilitates use of the Moodle VPLs by searching the current working directory for files which may be student work. There is also a feature which can generate ```vpl_evaluate.cases``` files automatically. This has the advantage of showing individual tests on the VPL web page, instead of one big test. The hope is that this makes debugging more approachable for students. 
+```vpltools``` facilitates use of the Moodle VPLs by searching the current working directory for files which may be student work. There is also a feature which can generate ```vpl_evaluate.cases``` files automatically. This has the advantage of showing individual tests on the VPL web page, instead of one big test. The hope is that this makes debugging more approachable for students. 
 
 The focus of this package was originally only on Python, using ```unittest```; no other languages were testable. This changed in version 0.12, which introduced ```OpaqueTest```, a way to facilitate end-to-end testing of compiled programs, but still using Python's ```unittest```. 
 
@@ -47,14 +47,14 @@ Note that ```__unittest = True``` takes advantage of some mechanisms in ```unitt
 ### 1. Minimal Use. Find student's file, and run tests.
 ```python
 import os.path
-import findmodules
+import vpltools
 import unittest
 
 __unittest = True
 
-lab = findmodules.import_student_module(os.path.dirname(__file__))
+lab = vpltools.import_student_module(os.path.dirname(__file__))
 
-class MyTestCaseClass(findmodules.VPLTestCase):
+class MyTestCaseClass(vpltools.VPLTestCase):
    keySourceFiles = []
 
    def testNumberOne(self):
@@ -69,17 +69,17 @@ I recommend that this be combined with number 3, below.
 ```python
 import os.path
 import importlib
-import findmodules
+import vpltools
 MODULE_TO_TEST = "fairground_ride_key"     # name of key file, which is ignored.
 
 key = importlib.import_module(MODULE_TO_TEST)
-lab = findmodules.import_student_module(os.path.dirname(__file__), ignore_when_testing=[MODULE_TO_TEST])
+lab = vpltools.import_student_module(os.path.dirname(__file__), ignore_when_testing=[MODULE_TO_TEST])
 ```
 
 ### 3. Show tests individually in the VPL assignment. 
 I recommend that this approach be combined with number 2 above. This adds a separate entry into ```vpl_evaluate.cases``` for each method in ```MyTestCaseClass```.
 ```python
-import findmodules
+import vpltools
 import unittest
 
 __unittest = True
@@ -90,7 +90,7 @@ class MyTestCaseClass(unittest.TestCase):
 
    @classmethod
    def tearDownClass(cls) -> None:
-      findmodules.make_vpl_evaluate_cases(
+      vpltools.make_vpl_evaluate_cases(
          __file__, 
          globals(), 
          include_pylint=False)  
@@ -112,7 +112,7 @@ You can use this exactly in your test files. **Note:** There is a snippet for th
 Example usage of ```OpaqueTest```:
 ```python
 import unittest
-from findmodules import OpaqueTest
+from vpltools import OpaqueTest
 
 __unittest = True
 
@@ -160,7 +160,7 @@ This can speed up submission processing. See the ```VPLTestCase.use_pre_computed
 3. In a terminal, run ```python3 -m pip install .``` to install the program. You may want to install this in "editable" mode by adding ```-e``` or ```--editable```:
 ```python3 -m pip install --editable .```
 
-__Note:__ To use this with Moodle VPLs, you will need to install this package into your Moodle VPLJail manually. At time of writing, ```findmodules``` is NOT in the Python Package Index.
+__Note:__ To use this with Moodle VPLs, you will need to install this package into your Moodle VPLJail manually. At time of writing, ```vpltools``` is NOT in the Python Package Index.
 
 ## Build Process
 You you should not need to do this more than once, if at all.
@@ -169,11 +169,11 @@ You you should not need to do this more than once, if at all.
    
    ```python3 -m pip install --upgrade build```
 
-3. Build ```findmodules```:
+3. Build ```vpltools```:
 
    ```python3 -m build```
 
-4. Install ```findmodules``` in editable mode (in case you find bugs):
+4. Install ```vpltools``` in editable mode (in case you find bugs):
 
    ```python3 -m pip install --editable .```
 
@@ -181,23 +181,23 @@ You you should not need to do this more than once, if at all.
 
    ```cd ../``` Get out of the directory where the module actually lives. That'll cheat on the importing test.
 
-   ```python3 -m findmodules```
+   ```python3 -m vpltools```
 
    You should see a list of all the python modules you have in the directory where the command was run.
 
 ## Notes for Contributors:
 - Consider installing this for each of your local Python 3 installations, e.g., CPython, and Anaconda. This may save a headache when the wrong one is invoked, and everything breaks unexpectedly.
-- The directory structure is minimal. I had difficulty ensuring that the *package* was importable with ```import findmodules```rather than with ```from findmodules import findmodules``` or ```findmodules.findmodules```. If you know more about the packaging and distribution of Python projects than I do (it wouldn't take much) feel free to suggest a new organization.
+- The directory structure is minimal. I had difficulty ensuring that the *package* was importable with ```import vpltools```rather than with ```from vpltools import vpltools``` or ```vpltools.vpltools```. If you know more about the packaging and distribution of Python projects than I do (it wouldn't take much) feel free to suggest a new organization.
 
 
 # Python packaging Tutorial Commands
 This module was packaged by following and adapting to the [Python.org packaging tutorial](https://packaging.python.org/en/latest/tutorials/packaging-projects/), around January 2024.
 A summary of the commands used is below, along with the suggested directory structure:
 ```
-~/Documents/findmodules/
+~/Documents/vpltools/
    |- tests/
    |- src/
-   |  |- findmodules/
+   |  |- vpltools/
    |  |  `- example.py
    |  |  `- __init__.py
    `- license.txt
@@ -205,7 +205,7 @@ A summary of the commands used is below, along with the suggested directory stru
    `- pyproject.toml
 ```
 
-The commands are fun from within the top-level module directory: ```~/Documents/findmodules/```
+The commands are fun from within the top-level module directory: ```~/Documents/vpltools/```
 ```
 $ python3.10 -m pip install --upgrade build  # failed?
 $ python3.10 -m build                        # failed to create virtual environment

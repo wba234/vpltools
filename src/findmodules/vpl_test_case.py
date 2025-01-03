@@ -5,11 +5,11 @@ import subprocess
 import os.path
 import warnings
 import importlib
-
+from types import FunctionType
 from copy import copy
 from dataclasses import dataclass
 
-import findmodules
+import vpltools
 
 __unittest = True
 
@@ -215,8 +215,10 @@ class VPLTestCase(unittest.TestCase):
         "vpl_evaluate.cases",
     ]
 
-    keySourceFiles = None
+    key_source_files = None
     ignore_files = []
+
+    skip_basic_tests = []
 
     KEY_PROGRAM_NAME = "key_program"
     KEY_OUTFILE_NAME = "key_outfile"
@@ -229,9 +231,9 @@ class VPLTestCase(unittest.TestCase):
         abs_path_to_this_file = sys.modules[cls.__module__].__file__
         cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file)
 
-        if cls.keySourceFiles is None:
-            warnings.warn("keySourceFiles unspecified! Assuming no key program. \nInitialize this class attribute to an empty list to silence this warning.")
-            cls.keySourceFiles = []
+        if cls.key_source_files is None:
+            warnings.warn("key_source_files unspecified! Assuming no key program. \nInitialize this class attribute to an empty list to silence this warning.")
+            cls.key_source_files = []
 
         cls.student_program = cls.compile_student_program()
         cls.key_program = cls.compile_key_program()
@@ -251,17 +253,19 @@ class VPLTestCase(unittest.TestCase):
         cls.program_execution_env = cls.subprocess_run_options["env"]
 
         # If the student program is a Python program, import it as a module.
-        cls.student_py_module = cls.import_as_py_module(cls.student_program)
+        cls.student_py_module = cls.import_as_py_module(cls.student_program, cls.skip_basic_tests)
         cls.key_py_module = cls.import_as_py_module(cls.key_program)
 
         return super().setUpClass()
 
 
     @classmethod
-    def import_as_py_module(cls, program: SupportedLanguageProgram):
+    def import_as_py_module(cls, program: SupportedLanguageProgram, skip_basic_tests: list[FunctionType] = []):
         if isinstance(program, PythonProgram):
-            return importlib.import_module(os.path.splitext(program.executable_name)[0])
-                # os.path.join(cls.THIS_DIR_NAME, program.executable_name))
+            module = importlib.import_module(os.path.splitext(program.executable_name)[0])
+            vpltools.run_basic_tests(module, skip_basic_tests)
+            return module
+        
         return None
     
 
@@ -269,7 +273,7 @@ class VPLTestCase(unittest.TestCase):
     def compile_student_program(cls):
         student_source_files = [ 
             file for file in os.listdir(cls.THIS_DIR_NAME) 
-            if file not in cls.keySourceFiles 
+            if file not in cls.key_source_files 
                     and file not in cls.ignore_files
                     and file not in cls.VPL_SYSTEM_FILES
                     and file != cls.THIS_FILE_NAME
@@ -288,7 +292,7 @@ class VPLTestCase(unittest.TestCase):
     @classmethod
     def compile_key_program(cls):
         key_program = cls.detectLanguageAndMakeProgram(
-            cls.keySourceFiles,
+            cls.key_source_files,
             cls.KEY_PROGRAM_NAME,
             cls.KEY_OUTFILE_NAME
         )
@@ -332,7 +336,7 @@ class VPLTestCase(unittest.TestCase):
         '''
         test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
         vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
-        findmodules.make_cases_file_from_list(
+        vpltools.make_cases_file_from_list(
             cls.THIS_DIR_NAME,
             vpl_test_tuples,
             False
