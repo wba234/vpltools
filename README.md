@@ -16,7 +16,25 @@
 - Move the ```make_vpl_cases``` or whatever into a base class common to all python-based testing. See ```OpaqueTest``` for an example of how to do this.
 - Is setup.py in the wrong folder?
 
-# Automatic Module Discovery
+# About Findmodules
+```findmodules``` provides several subclasses of ```unittest.TestCase``` which provide functionality specific to working with Moodle VPLs. These subclasses are:
+- ```VPLTestCase```
+- ```HistorySearcher```
+- ```RegexTestCase```
+These are intended to be subclassed once for each individual assignment.
+## Major Features
+- Automatic generation of ```vpl_evaluate.cases``` files.
+- Automatic detection and, when necessary, compilation, of student submission files. Currently these programming languages are supported:
+   - Python
+   - C++
+   - C
+   - Java
+- Automatic importing of student submitted and instructor key modules, to enable Python functions to be invoked directly.
+- Language-agnostic end-to-end testing :
+   - ```.run_student_program()``` and ```.run_key_program()```
+   - ```.STUDENT_OUTFILE_NAME``` and ```.KEY_OUTFILE_NAME```
+   - ```.STUDENT_PROGRAM_NAME``` and ```.KEY_PROGRAM_NAME```
+
 ```findmodules``` facilitates use of the Moodle VPLs by searching the current working directory for files which may be student work. There is also a feature which can generate ```vpl_evaluate.cases``` files automatically. This has the advantage of showing individual tests on the VPL web page, instead of one big test. The hope is that this makes debugging more approachable for students. 
 
 The focus of this package was originally only on Python, using ```unittest```; no other languages were testable. This changed in version 0.12, which introduced ```OpaqueTest```, a way to facilitate end-to-end testing of compiled programs, but still using Python's ```unittest```. 
@@ -36,8 +54,11 @@ __unittest = True
 
 lab = findmodules.import_student_module(os.path.dirname(__file__))
 
-class MyTestCaseClass(unittest.TestCase):
-   # ...Tests go here.
+class MyTestCaseClass(findmodules.VPLTestCase):
+   keySourceFiles = []
+
+   def testNumberOne(self):
+      self.student_py_module
 
 if __name__ == "__main__":
    unittest.main()
