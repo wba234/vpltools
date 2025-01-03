@@ -217,6 +217,7 @@ class VPLTestCase(unittest.TestCase):
 
     key_source_files = None
     ignore_files = []
+    include_pylint = False
 
     skip_basic_tests = []
 
@@ -339,7 +340,7 @@ class VPLTestCase(unittest.TestCase):
         vpltools.make_cases_file_from_list(
             cls.THIS_DIR_NAME,
             vpl_test_tuples,
-            False
+            cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False
         )
         return super().tearDownClass()
     

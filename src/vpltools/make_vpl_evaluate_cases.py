@@ -6,7 +6,11 @@ import os.path
 
 __unittest = True
 
-def overwrite_file_if_different(file_path, new_contents, verbose=True) -> bool:
+def overwrite_file_if_different(file_path: str, new_contents: str, verbose: bool = True) -> bool:
+    '''
+    Given the path to the existing vpl_evaluate.cases file, and 
+    the desired contents of the file, update it if they are different.
+    '''
     # Two cases for writing the file:
     # 1. It doesn't exist.
     # 2. It's out of date.
@@ -34,7 +38,16 @@ def overwrite_file_if_different(file_path, new_contents, verbose=True) -> bool:
     return did_write_file
 
 
-def python3_case_block(test_method_description: tuple) -> str:
+def python3_case_block(test_method_description: tuple[str]) -> str:
+    '''
+    Returns a string suitable to write to a vpl_evaluate.cases file
+    to invoke a single test method from a VPLTestCase.
+    Accepts a tuple containing the names of the 
+    - test module, 
+    - test_class, and 
+    - test_method,
+    in that order.
+    '''
     module_name, test_class, method_name = test_method_description
     test_case_format = (f"Case = {method_name}" + "\n"
         f"program to run = /usr/bin/python3"    + "\n"
@@ -46,7 +59,11 @@ def python3_case_block(test_method_description: tuple) -> str:
     return test_case_format
 
 
-def pylint_case_block(module_name):
+def pylint_case_block(module_name: str) -> str:
+    '''
+    Returns a string suitable to write to a vpl_evaluate.cases file
+    to invoke pylint on the student's submission.
+    '''
     pylint_test_case = (
         f"Case = PyLint Style Check" + "\n"
         f"program to run = /usr/bin/python3" + "\n"
@@ -57,12 +74,24 @@ def pylint_case_block(module_name):
     return pylint_test_case
 
 
-def get_vpl_eval_path(module_path):
+def get_vpl_eval_path(module_path: str) -> str:
+    '''
+    Returns the absolute path where vpl_evaluate.cases should be written
+    (the same location as the student's module, and test module).
+    '''
     return os.path.join(
-        module_path if os.path.isdir(module_path) else os.path.dirname(module_path), "vpl_evaluate.cases")
+        module_path 
+            if os.path.isdir(module_path) 
+            else os.path.dirname(module_path), 
+        "vpl_evaluate.cases")
 
 
-def make_cases_file_from_list(module_path, test_method_list, include_pylint):
+def make_cases_file_from_list(module_path: str, test_method_list: list[tuple[str]], include_pylint: bool):
+    '''
+    Writes or overwrites the vpl_evaluate.cases file located alongside 
+    student's module. Writes one "case" block for each element of test_method_list, 
+    and another for pylint, if the flag has been set.
+    '''
     all_test_cases_string = ""
 
     for test_method_description in test_method_list:
