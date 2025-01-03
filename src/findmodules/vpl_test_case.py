@@ -216,6 +216,8 @@ class VPLTestCase(unittest.TestCase):
     ]
 
     keySourceFiles = None
+    ignore_files = []
+
     KEY_PROGRAM_NAME = "key_program"
     KEY_OUTFILE_NAME = "key_outfile"
 
@@ -268,6 +270,7 @@ class VPLTestCase(unittest.TestCase):
         student_source_files = [ 
             file for file in os.listdir(cls.THIS_DIR_NAME) 
             if file not in cls.keySourceFiles 
+                    and file not in cls.ignore_files
                     and file not in cls.VPL_SYSTEM_FILES
                     and file != cls.THIS_FILE_NAME
                     and not file.startswith("__")
