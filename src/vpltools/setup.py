@@ -1,3 +1,7 @@
+'''
+This is considered deprecated. It will be removed in the future, when I'm sure that Anaconda
+supports editable installations which don't require setuptools.
+'''
 from distutils.core import setup
 
 with open("README.md", "r") as fo:

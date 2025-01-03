@@ -1,3 +1,16 @@
+Metadata-Version: 2.1
+Name: vpltools
+Version: 0.17
+Summary: Facilitates Moodle VPL use by providing extensible subclasses of unittest.TestCase working directory for other python files.
+Author-email: William Bailey <william.bailey@centre.edu>
+Project-URL: Homepage, https://github.com/wba234/baileycs1
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
 # TODO
 - Write some notes about what new users should know:
    - that they need to set ```keySourceFiles```
@@ -163,6 +176,7 @@ This can speed up submission processing. See the ```VPLTestCase.use_pre_computed
 __Note:__ To use this with Moodle VPLs, you will need to install this package into your Moodle VPLJail manually. At time of writing, ```vpltools``` is NOT in the Python Package Index.
 
 ## Build Process
+You you should not need to do this more than once, if at all.
 1. Navigate to top level directory.
 2. Install ```build``` if necessary:
    
