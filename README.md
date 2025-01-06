@@ -1,6 +1,19 @@
 # About VPLTools
 VPLTools is a package for writing tests which work with the VPL Moodle plugin. Tests are obviously written in Python, but it enables easy end-to-end testing of programs written in other languages too.
 
+## Key Features
+VPLTools seeks to make implementing VPL assignments as easy as possible. Most of its features are vailable as part of the ```VPLTestCase``` class, which should be extended to create tests, like your would with Python's ```unittest.TestCase```. The ```VPLTestCase``` class provides a number of features:
+- automatic detection, and when necessary, compiltion of student files. This means that you can write end-to-end tests which allow students to use any programming language supported by VPLTools.
+- automatic importing of key and student Python programs as modules
+- automatic generation the ```vpl_evaluate.cases``` file, including cases for a style check using PyLint.
+
+## Attribute and Method Reference
+   - ```key_source_files``` - Set this to tell VPLTools which files in the local directory are part of the solution program. Can be empty.
+   - that they can call ```run_student_program```
+   - that they can call ```run_key_program```
+   - that they can access ```student_py_module```
+   - that they can access ```key_py_module```
+   - that they can access output files.
 
 
 ## Typical Programming Assignments - ```VPLTestCase```
@@ -79,17 +92,8 @@ In addition to ```VPLTestCase``` VPLTools also provides some classes which suppo
  - ```HistorySearcher``` for command-line tutorial assignments which ask students to submit a list of their command history.
 - ```RegexTestCase``` for assignments which ask students to submit a regular expression pattern.
 
-
-## Important Attributes and Functions
-- Write some notes about what new users should know:
-   - that they need to set ```keySourceFiles```
-   - that they can call ```run_student_program```
-   - that they can call ```run_key_program```
-   - that they can access ```student_py_module```
-   - that they can access ```key_py_module```
-   - that they can access output files.
-
 # To Do
+- Add a method for defining a set of permitted programming languages.
 - Add a method for writing student and key output files to memory mapped files, for speed.
 - Add a method for writing each test output file from the key program to a separate file, so that they can be cached, for speed.
 - SQL Unittets need their 
