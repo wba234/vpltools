@@ -13,7 +13,7 @@ VPLTools seeks to make implementing VPL assignments as easy as possible. Most of
    - that they can call ```run_key_program```
    - that they can access ```student_py_module```
    - that they can access ```key_py_module```
-   - that they can access output files.
+   - that they can access output files with ```STUDENT_OUTFILE_NAME``` and ```KEY_OUTFILE_NAME```.
 
 
 ## Typical Programming Assignments - ```VPLTestCase```
