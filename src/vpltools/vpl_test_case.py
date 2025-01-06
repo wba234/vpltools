@@ -242,11 +242,11 @@ class VPLTestCase(unittest.TestCase):
     include_pylint = False
 
 
-    KEY_PROGRAM_NAME = "key_program"
-    KEY_OUTFILE_NAME = "key_outfile"
+    key_program_name = "key_program"
+    key_outfile_name = "key_outfile"
 
-    STUDENT_PROGRAM_NAME = "student_program"
-    STUDENT_OUTFILE_NAME = "student_outfile"
+    student_program_name = "student_program"
+    student_outfile_name = "student_outfile"
 
     @classmethod
     def setUpClass(cls):
@@ -317,8 +317,8 @@ class VPLTestCase(unittest.TestCase):
 
         student_program = cls.detectLanguageAndMakeProgram(
             student_source_files, 
-            cls.STUDENT_PROGRAM_NAME, 
-            cls.STUDENT_OUTFILE_NAME
+            cls.student_program_name, 
+            cls.student_program_name
         )
         student_program.compile(cls.THIS_DIR_NAME)
         return student_program
@@ -333,8 +333,8 @@ class VPLTestCase(unittest.TestCase):
         '''
         key_program = cls.detectLanguageAndMakeProgram(
             cls.key_source_files,
-            cls.KEY_PROGRAM_NAME,
-            cls.KEY_OUTFILE_NAME
+            cls.key_program_name,
+            cls.key_outfile_name
         )
         if key_program is not None:
             key_program.compile(cls.THIS_DIR_NAME)
