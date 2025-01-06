@@ -5,11 +5,11 @@ VPLTools is a package for writing tests which work with the VPL Moodle plugin. T
 VPLTools seeks to make implementing VPL assignments as easy as possible. Most of its features are available as part of the ```VPLTestCase``` class, which should be extended to create tests, like your would with Python's ```unittest.TestCase```. The ```VPLTestCase``` class provides a number of features:
 - automatic detection, and when necessary, compilation of student files. This means that you can write end-to-end tests which allow students to use any programming language supported by VPLTools.
 - automatic importing of key and student Python programs as modules
-- automatic generation the ```vpl_evaluate.cases``` file, including cases for a style check using PyLint.
+- automatic generation the ```vpl_evaluate.cases``` file
 
 ## Usage
 ### Directory Setup
-It is recommended that you use a separate directory for each assignment. A typical directory structure might look like this:
+It is recommended that you use a separate directory for each assignment and its associated tests. A typical directory structure might look like this:
 ```text
 temperature_conversion_lab
 ├── assignment_description.html
@@ -19,20 +19,21 @@ temperature_conversion_lab
 ├── buggy_f2c.py
 └── vpl_evaluate.cases
 ```
-- ```assignment_description.html``` is the assignment prompt for students.
-- ```temp_conversion_starter_code.py``` is code for students to build on.
-- ```test_f2c.py``` contains the ```vpltools.VPLTestCase``` which implements the tests.
-- ```f2c_key.py``` is the instructor's solution.
-- ```buggy_f2c.py``` is a simulated student submission, to run the tests on.
-- ```vpl_evaluate.cases``` is the file describing which tests the VPL plugin should run.
+- ```assignment_description.html``` is the assignment prompt for students
+- ```temp_conversion_starter_code.py``` is code for students to build on
+- ```test_f2c.py``` contains the ```vpltools.VPLTestCase``` which implements the tests
+- ```f2c_key.py``` is the instructor's solution
+- ```buggy_f2c.py``` is a simulated student submission, to run the tests on
+- ```vpl_evaluate.cases``` is the file describing which tests the VPL plugin should run
 
 **When posting a VPL assignment**, remember to upload:
 - the test file
-- the key program, if referenced by the test file
+- the key program, if required by the test file
 - ```vpl_evaluate.cases```
+
 You also need to enable the ***keep files when running*** option for each of these.
 
-### Write Tests
+### Writing Tests
 Test file names should start with "test" and be located in the same directory as your answer key program, and any simulated student submissions to run the tests on. Write tests as your normally would with Python's ```unittest``` module. The ```vpl_evaluate.cases``` file is generated automatically (in ```tearDownClass```) when the set of test cases runs to completion. 
 
 In addition to the features of the ```unittest``` package, you can use the following attributes and functions provided by ```VPLTestCase```:
@@ -43,10 +44,10 @@ In addition to the features of the ```unittest``` package, you can use the follo
    #### Important Attributes
    - ```key_source_files: list[str]``` - Set this in class scope to tell VPLTools which files in the local directory are part of the solution program. Can be empty.
    - ```ignore_files: list[str]``` - Set this in class scope to tell VPLTools which files in the local directory should be ignored.
-   - ```student_py_module: ModuleType | None``` - Access this to invoke student functions directly (Python submissions only).
-   - ```key_py_module: ModuleType | None``` - Access this to invoke solution program functions directly (Python solutions only).
-   - ```STUDENT_OUTFILE_NAME: str``` - Predefined name for student output files. This must be passed as an argument to student programs when invoking them with ```run_student_program()```.
-   - ```KEY_OUTFILE_NAME: str:``` - Predefined name for solution program output files.
+   - ```student_py_module: ModuleType | None``` - Use this to access student functions directly (Python submissions only).
+   - ```key_py_module: ModuleType | None``` - Use this to access solution program functions directly (Python solutions only).
+   - ```student_outfile_name: str``` - Predefined name for student output files. This must be passed as an argument to student programs when invoking them with ```run_student_program()```. This means that student programs must accept the name of an output file as one of their program's inputs.
+   - ```key_outfile_name: str:``` - Predefined name for solution program output files.
    - ```run_basic_tests: list[function]``` - Define a list of basic tests from ```vpltools.basic_tests.BASIC_TESTS``` to run when importing student Python programs. This list is empty by default.
    - ```include_pylint: bool``` - Flag to include a VPL case which runs the PyLint static analyzer on student's submission, and passes only if PyLint is completely happy (Python only).
 
@@ -95,7 +96,7 @@ from findmodules import VPLTestCase
 class TestBruteForceKnapsack(VPLTestCase):
     '''
     Run a program which produces an outfile with all the possible selections 
-    for a Knapsack problem. Compares the outputs to ensure that all possibilities 
+    for a Knapsack problem. Compare the outputs to ensure that all possibilities 
     have been tested, and the optimal has been found.
     '''
     # keySourceFiles = [ "key_brute_force_knapsack.py", ]
@@ -130,18 +131,18 @@ class TestBruteForceKnapsack(VPLTestCase):
 
         # Run both programs with the same commands, except for the output_file.
          lab_proc = self.run_student_program(
-               [max_items, max_weight, input_file, self.STUDENT_OUTFILE_NAME], 
+               [max_items, max_weight, input_file, self.student_outfile_name], 
                input_string="",
                **more_subprocess_run_options)
 
          key_proc = self.run_key_program(
-               [max_items, max_weight, input_file, self.KEY_OUTFILE_NAME], 
+               [max_items, max_weight, input_file, self.key_outfile_name], 
                input_string="",
                **more_subprocess_run_options)
 
         # Read the created files...
-        lab_output = self.parse_output_file(self.STUDENT_OUTFILE_NAME)
-        key_output = self.parse_output_file(self.KEY_OUTFILE_NAME)
+        lab_output = self.parse_output_file(self.student_outfile_name)
+        key_output = self.parse_output_file(self.key_outfile_name)
 
         # ...compare the optimal solutions...
         self.assertTupleEqual(
