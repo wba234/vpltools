@@ -4,12 +4,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "findmodules"
-version = "0.15"
+name = "vpltools"
+version = "0.17"
 authors = [
   { name="William Bailey", email="william.bailey@centre.edu" },
 ]
-description = "A package which facilitates use of the Moodle VPLs by searching the current working directory for other python files."
+description = "Facilitates Moodle VPL use by providing extensible subclasses of unittest.TestCase working directory for other python files."
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [

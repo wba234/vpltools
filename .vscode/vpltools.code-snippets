@@ -1,0 +1,57 @@
+{
+	// Place your vpltools workspace snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
+	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
+	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 
+	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. 
+	// Placeholders with the same ids are connected.
+	// Example:
+	// "Print to console": {
+	// 	"scope": "javascript,typescript",
+	// 	"prefix": "log",
+	// 	"body": [
+	// 		"console.log('$1');",
+	// 		"$2"
+	// 	],
+	// 	"description": "Log output to console"
+	// }
+	"vpl_test_case":{
+		"scope": "python",
+		"prefix": "test",
+		"isFileTemplate": true,
+		"body": [
+			"'''",
+			"REMEMBER:",
+			"- TEST FILES SHOULD START WITH \"test\"",
+			"- TEST METHODS SHOULD START WITH \"test\"",
+			"To run tests, you can use the command",
+			"$ python3 -m unittest discover # the discover is optional.",
+			"$ python3 <test_module_name>",
+			"'''",
+			"",
+			"import unittest",
+			"import vpltools",
+			"",
+			"__unittest = True",
+			"",
+			"class ${2:test_class_name}(vpltools.VPLTestCase):",
+			"    '''",
+			"    Describe any peculiarities of the program being tested here.",
+			"    '''",
+			"    keySourceFiles = [\"${3:key_program_source.ext}\"]",
+			"    ignore_files = []",
+			"",
+			"    def ${4:test_function_name}(self):",
+			"        '''",
+			"        Describe any peculiarities of the function being tested here.",
+			"        '''",
+			"        # Go for it...",
+			"        # Use self.student_py_module, self.key_py_module to access python functions directly",
+			"        # Use self.run_student_program, self.run_key_program to run programs in subprocesses.",
+			"",
+			"if __name__ == \"__main__\":",
+			"    unittest.main()",
+			""
+		]
+	}
+}
