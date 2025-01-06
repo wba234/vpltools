@@ -1,24 +1,13 @@
 # About VPLTools
-VPLTools is a package for writing tests which work with the VPL Moodle plugin. Tests are obviously written in Python, but it enables easy end-to-end testing of programs written in other languages too.
+VPLTools is a package for writing tests which work with the VPL Moodle plugin. Test code is--naturally--written in Python, but VPLTools enables end-to-end testing of programs written in other languages too.
 
 ## Key Features
-VPLTools seeks to make implementing VPL assignments as easy as possible. Most of its features are vailable as part of the ```VPLTestCase``` class, which should be extended to create tests, like your would with Python's ```unittest.TestCase```. The ```VPLTestCase``` class provides a number of features:
-- automatic detection, and when necessary, compiltion of student files. This means that you can write end-to-end tests which allow students to use any programming language supported by VPLTools.
+VPLTools seeks to make implementing VPL assignments as easy as possible. Most of its features are available as part of the ```VPLTestCase``` class, which should be extended to create tests, like your would with Python's ```unittest.TestCase```. The ```VPLTestCase``` class provides a number of features:
+- automatic detection, and when necessary, compilation of student files. This means that you can write end-to-end tests which allow students to use any programming language supported by VPLTools.
 - automatic importing of key and student Python programs as modules
 - automatic generation the ```vpl_evaluate.cases``` file, including cases for a style check using PyLint.
 
-## Attribute and Method Reference
-   - ```key_source_files``` - Set this to tell VPLTools which files in the local directory are part of the solution program. Can be empty.
-   - that they can call ```run_student_program```
-   - that they can call ```run_key_program```
-   - that they can access ```student_py_module```
-   - that they can access ```key_py_module```
-   - that they can access output files with ```STUDENT_OUTFILE_NAME``` and ```KEY_OUTFILE_NAME```.
-
-
-## Typical Programming Assignments - ```VPLTestCase```
-Chiefly, VPLTools provides ```VPLTestCase```, a subclass of Python's native ```unittest.TestCase```, with functionality specific to working with Moodle VPLs. By subclassing this, instructors can define tests for most types of programming assignments.
-
+## Usage
 ### Directory Setup
 It is recommended that you use a separate directory for each assignment. A typical directory structure might look like this:
 ```text
@@ -43,13 +32,31 @@ temperature_conversion_lab
 - ```vpl_evaluate.cases```
 You also need to enable the ***keep files when running*** option for each of these.
 
+### Write Tests
+Test file names should start with "test" and be located in the same directory as your answer key program, and any simulated student submissions to run the tests on. Write tests as your normally would with Python's ```unittest``` module. The ```vpl_evaluate.cases``` file is generated automatically (in ```tearDownClass```) when the set of test cases runs to completion. 
 
-### Example Use - Python Unit Testing
+In addition to the features of the ```unittest``` package, you can use the following attributes and functions provided by ```VPLTestCase```:
+   #### Important Methods
+   - ```run_student_program()``` - Call this to execute the student's program in a subprocess.
+   - ```run_key_program()``` - Call this to execute the solution program in a subprocess.
+
+   #### Important Attributes
+   - ```key_source_files: list[str]``` - Set this in class scope to tell VPLTools which files in the local directory are part of the solution program. Can be empty.
+   - ```ignore_files: list[str]``` - Set this in class scope to tell VPLTools which files in the local directory should be ignored.
+   - ```student_py_module: ModuleType | None``` - Access this to invoke student functions directly (Python submissions only).
+   - ```key_py_module: ModuleType | None``` - Access this to invoke solution program functions directly (Python solutions only).
+   - ```STUDENT_OUTFILE_NAME: str``` - Predefined name for student output files. This must be passed as an argument to student programs when invoking them with ```run_student_program()```.
+   - ```KEY_OUTFILE_NAME: str:``` - Predefined name for solution program output files.
+   - ```run_basic_tests: list[function]``` - Define a list of basic tests from ```vpltools.basic_tests.BASIC_TESTS``` to run when importing student Python programs. This list is empty by default.
+   - ```include_pylint: bool``` - Flag to include a VPL case which runs the PyLint static analyzer on student's submission, and passes only if PyLint is completely happy (Python only).
+
+
+## Example Usage - Python Unit Testing
 ```python
 import unittest
 import vpltools
 
-__unittest = True
+__unittest = True # Silence tracebacks from this module.
 
 class TestF2C(vpltools.VPLTestCase):
     key_source_files = [ "f2c_key.py", ]
@@ -76,21 +83,98 @@ if __name__ == '__main__':
     unittest.main()
 ```
 
-Things to note about this example:
-- ```__unittest = True``` has the effect of suppressing parts of error tracebacks which originate from within testing code, and which can eb confusing to students.
-- ```key_source_files``` is a list of files which constitute the instructors solution. They are ignored when searching for student's files.
-- There are other important options which may be specified as class attributes in ```VPLTestCase``` subclasses. They are:
-   - ```ignore_files``` - a list of files which should be ignored by vpltools. (e.g., starter code or alternative solutions)
-   - ```skip_basic_tests``` - (Python submissions only) list of tests which should be skipped when importing student solutions. Basic tests are not run on Instructor solutions. To skip all basic tests, set this to ```vpltools.BASIC_TESTS```.
-   - ```include_pylint``` - (Python submissions only) boolean flag indicating if a Pylint case should be added to the evaluate cases file.
+Note that ```__unittest = True``` has the effect of suppressing parts of error tracebacks which originate from within testing code, and which can be confusing to students.
 
 ### Example Use - End-to-End Testing
+```python
+import os.path
+import unittest
+from subprocess import TimeoutExpired
+from findmodules import VPLTestCase
 
+class TestBruteForceKnapsack(VPLTestCase):
+    '''
+    Run a program which produces an outfile with all the possible selections 
+    for a Knapsack problem. Compares the outputs to ensure that all possibilities 
+    have been tested, and the optimal has been found.
+    '''
+    # keySourceFiles = [ "key_brute_force_knapsack.py", ]
+    keySourceFiles = [ "key_brute_force_knapsack.c", ]
+
+    input_file_names = [
+        "knapsack_input1.txt",
+        "knapsack_input2.txt",
+    ]
+
+    @staticmethod
+    def parse_output_file(file_name: str) -> list[tuple]:
+        file_path = os.path.join(os.path.dirname(__file__), file_name)
+        with open(file_path, "r") as fo:
+            options_list = []
+            while bitstring := fo.readline().strip():
+                options_list.append((bitstring, int(fo.readline()), int(fo.readline())))
+        
+        return options_list
+    
+    def test_4items_70kg_file1(self):
+        self.run_and_compare_output_files("4", "70", self.input_file_names[0])
+
+    def run_and_compare_output_files(self, max_items, max_weight, input_file):
+        '''
+        This is the main logic of the test cases. 
+        It runs both programs, and compares the output files.
+        '''
+        more_subprocess_run_options = {
+            "timeout" : 30
+        }
+
+        # Run both programs with the same commands, except for the output_file.
+         lab_proc = self.run_student_program(
+               [max_items, max_weight, input_file, self.STUDENT_OUTFILE_NAME], 
+               input_string="",
+               **more_subprocess_run_options)
+
+         key_proc = self.run_key_program(
+               [max_items, max_weight, input_file, self.KEY_OUTFILE_NAME], 
+               input_string="",
+               **more_subprocess_run_options)
+
+        # Read the created files...
+        lab_output = self.parse_output_file(self.STUDENT_OUTFILE_NAME)
+        key_output = self.parse_output_file(self.KEY_OUTFILE_NAME)
+
+        # ...compare the optimal solutions...
+        self.assertTupleEqual(
+            lab_output[-1][1:], 
+            key_output[-1][1:], 
+            msg=(
+                f"With {max_items} items from {input_file}, and a limit of {max_weight}kg,\n"
+                + f"the selected items should be {key_output[-1][0]} not {lab_output[-1][0]}."))
+        
+        # ...and the list of all possible options.
+        sorted_lab_output = sorted(lab_output[:-1], key=lambda tpl: tpl[0])
+        sorted_key_output = sorted(key_output[:-1], key=lambda tpl: tpl[0])
+        
+        self.assertListEqual(
+            sorted_lab_output,
+            sorted_key_output,
+            msg=(
+                "Your list of possibilities was not correct.\n"
+                + "Please double-check:\n"
+                + "\t- The number of 3-line blocks, and\n"
+                + "\t- the order of lines in each 3-line block.\n"))
+
+if __name__ == "__main__":
+    unittest.main()
+```
 
 ## Other Programming Assignments
 In addition to ```VPLTestCase``` VPLTools also provides some classes which support other, more specific types of programming assignments:
  - ```HistorySearcher``` for command-line tutorial assignments which ask students to submit a list of their command history.
 - ```RegexTestCase``` for assignments which ask students to submit a regular expression pattern.
+
+## VSCode Snippet
+There is a snippet for this boilerplate in ```/.vscode```. The format of the snippet (JSON) is a little specific to VSCode, but the code can be extracted relatively easily. Type ```test``` in a snakefile to trigger the snippet. 
 
 # To Do
 - Add a method for defining a set of permitted programming languages.
@@ -100,12 +184,7 @@ In addition to ```VPLTestCase``` VPLTools also provides some classes which suppo
     ```vpltools.make_vpl_evaluate_cases(__file__, locals(), include_pylint=False)``` at the bottom rolled into a ```tearDownClass``` method. This goes for all the various types of tests. NO BOILERPLATE.
 - Add other basic tests?
 - publish this to PPI?
-
-# Snippet
-You can use this exactly in your test files. **Note:** There is a snippet for this boilerplate in ```/.vscode```. The format of the snippet (JSON) is a little specific to VSCode, but the code can be extracted relatively easily. Type ```test``` in a snakefile to trigger the snippet. 
-
-### Using Key Output Files instead of Re-running Key program each time.
-This can speed up submission processing. See the ```VPLTestCase.use_pre_computed_key```.
+- Using Key Output Files instead of Re-running Key program each time. This can speed up submission processing. See the ```VPLTestCase.use_pre_computed_key```.
 
 ## Installation
 1. Download this repository.
@@ -118,28 +197,26 @@ __Note:__ To use this with Moodle VPLs, you will need to install this package in
 ## Build Process
 1. Navigate to top level directory.
 2. Install ```build``` if necessary:
-   
-   ```python3 -m pip install --upgrade build```
+   ```bash
+   python3 -m pip install --upgrade build
+   ```
 
 3. Build ```vpltools```:
-
-   ```python3 -m build```
+   ```bash
+   python3 -m build
+   ```
 
 4. Install ```vpltools``` in editable mode (in case you find bugs):
-
-   ```python3 -m pip install --editable .```
+   ```bash
+   python3 -m pip install --editable . # Note the period!
+   ```
 
 5. Check that the module is importable:
-
-   ```cd ../``` Get out of the directory where the module actually lives. That'll cheat on the importing test.
-
-   ```python3 -m vpltools```
-
-   You should see a list of all the python modules you have in the directory where the command was run.
-
-## Notes for Contributors:
-- Consider installing this for each of your local Python 3 installations, e.g., CPython, and Anaconda. This may save a headache when the wrong one is invoked, and everything breaks unexpectedly.
-- The directory structure is minimal. I had difficulty ensuring that the *package* was importable with ```import vpltools```rather than with ```from vpltools import vpltools``` or ```vpltools.vpltools```. If you know more about the packaging and distribution of Python projects than I do (it wouldn't take much) feel free to suggest a new organization.
+   Get out of the directory where the module actually lives. That'll cheat on the importing test:
+   ```text
+   $ python3
+   >>> import vpltools
+   ```
 
 
 # Python packaging Tutorial Commands
