@@ -10,9 +10,12 @@ from copy import copy
 from dataclasses import dataclass
 
 import vpltools
+import vpltools.basic_tests
 
 __unittest = True
 
+class NoProgramError(RuntimeError):
+    pass
 
 @dataclass
 class SupportedLanguage(abc.ABC):
@@ -234,7 +237,8 @@ class VPLTestCase(unittest.TestCase):
 
     key_source_files = None
     ignore_files = []
-    skip_basic_tests = []
+    run_basic_tests = []
+    # skip_basic_tests = vpltools.BASIC_TESTS
     include_pylint = False
 
 
@@ -275,21 +279,21 @@ class VPLTestCase(unittest.TestCase):
         cls.program_execution_env = cls.subprocess_run_options["env"]
 
         # If the student program is a Python program, import it as a module.
-        cls.student_py_module = cls.import_as_py_module(cls.student_program, cls.skip_basic_tests)
+        cls.student_py_module = cls.import_as_py_module(cls.student_program, cls.run_basic_tests)
         cls.key_py_module = cls.import_as_py_module(cls.key_program)
 
         return super().setUpClass()
 
 
     @classmethod
-    def import_as_py_module(cls, program: SupportedLanguageProgram, skip_basic_tests: list[FunctionType] = []):
+    def import_as_py_module(cls, program: SupportedLanguageProgram, run_basic_tests: list[FunctionType] = []):
         '''
         Returns a module object if program is a Python program, None otherwise. 
         Runs basic tests if flag is set.
         '''
         if isinstance(program, PythonProgram):
             module = importlib.import_module(os.path.splitext(program.executable_name)[0])
-            vpltools.run_basic_tests(module, skip_basic_tests)
+            vpltools.run_basic_tests(module, run_basic_tests)
             return module
         
         return None
@@ -419,6 +423,9 @@ class VPLTestCase(unittest.TestCase):
         Execute the student's program in a subprocess, providing the given arguments, and 
         input string. Uses the environment of the calling VPLTestCase subclass.
         '''
+        if cls.student_program is None:
+            raise NoProgramError("Student program not found!")
+
         return cls.student_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
     
     
@@ -428,6 +435,9 @@ class VPLTestCase(unittest.TestCase):
         Execute the key program in a subprocess, providing the given arguments, and 
         input string. Uses the environment of the calling VPLTestCase subclass.
         '''
+        if cls.key_program is None:
+            raise NoProgramError("Key program not found!")
+
         return cls.key_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
 
 

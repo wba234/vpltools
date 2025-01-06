@@ -55,11 +55,8 @@ BASIC_TESTS = [
     has_main_function,
 ]
 
-def run_basic_tests(module, skip_basic_tests):
-    for test_function in BASIC_TESTS:
-        if test_function in skip_basic_tests:
-            continue
-
+def run_basic_tests(module, run_basic_tests):
+    for test_function in run_basic_tests:
         try:
             test_function(module)
         except NameError:
