@@ -261,6 +261,7 @@ class VPLTestCase(unittest.TestCase):
 
     key_source_files = None
     ignore_files = []
+    permitted_student_languages = SUPPORTED_LANGUAGES
     run_basic_tests = []
     # skip_basic_tests = vpltools.BASIC_TESTS
     include_pylint = False
@@ -345,6 +346,10 @@ class VPLTestCase(unittest.TestCase):
             cls.student_program_name
         )
         student_program.compile(cls.THIS_DIR_NAME)
+
+        if student_program.language not in cls.permitted_student_languages:
+            raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {cls.permitted_student_languages}")
+        
         return student_program
 
 
