@@ -5,6 +5,8 @@ import subprocess
 import os.path
 import warnings
 import importlib
+import re
+from typing import Type
 from types import FunctionType
 from copy import copy
 from dataclasses import dataclass
@@ -39,6 +41,7 @@ class SupportedLanguageProgram(abc.ABC):
     language: SupportedLanguage
     compilation_commands: list[str]
     main_file_base_name: str
+    executable_dir: str
     executable_name: str
     source_files: list[str] = None
     output_file_name: str = None
@@ -53,10 +56,14 @@ class SupportedLanguageProgram(abc.ABC):
         raise NotImplementedError
 
 
-    def compile(self, use_dir):
+    def compile(self, use_dir, recompile=False):
         '''
-        Compile the program represented by the calling object.
+        Compile the program represented by the calling object. If the target program
+        already exists, compilation is skipped, unless the recompile flag is set.
         '''
+        if os.path.exists(os.path.join(self.executable_dir, self.executable_name)) and not recompile:
+            return
+        
         command = self.compilationCommand()
 
         # Interpreted languages don't need compilation
@@ -98,12 +105,13 @@ class CProgram(SupportedLanguageProgram):
     Represents a program written in C, 
     e.g., a student's submission, or an instructor's key program.
     '''
-    def __init__(self, executable_name: str, source_files: list[str], output_file_name: str):
+    def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
         return super().__init__(
             SUPPORTED_LANGUAGES["C"], 
             [ "gcc", "-o", executable_name ] + source_files + ["-lm"], 
             "main", 
-            executable_name, 
+            executable_dir,
+            executable_name,
             source_files, 
             output_file_name)
 
@@ -122,12 +130,13 @@ class CPPProgram(SupportedLanguageProgram):
     Represents a program written in C++, 
     e.g., a student's submission, or an instructor's key program.
     '''
-    def __init__(self, executable_name: str, source_files: list[str], output_file_name: str):
+    def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
         return super().__init__(
             SUPPORTED_LANGUAGES["CPP"], 
             [ "g++", "-o", executable_name] + source_files + ["-lm"], 
             "main", 
-            executable_name, 
+            executable_dir,
+            executable_name,
             source_files, 
             output_file_name)
 
@@ -146,8 +155,12 @@ class JavaProgram(SupportedLanguageProgram):
     Represents a program written in Java, 
     e.g., a student's submission, or an instructor's key program.
     '''
-    def __init__(self, executable_name, source_files, output_file_name):
-        return super().__init__(SUPPORTED_LANGUAGES["JAVA"], ["java"], "main", executable_name, source_files, output_file_name)
+    def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
+        '''
+        Note that executable_name
+        '''
+        super().__init__(SUPPORTED_LANGUAGES["JAVA"], ["javac"], "main", executable_dir, executable_name, source_files, output_file_name)
+        self.find_main_and_set_exec_name()
     
 
     def compilationCommand(self):
@@ -158,6 +171,16 @@ class JavaProgram(SupportedLanguageProgram):
         return subprocess.run(["java", self.executable_name, *cli_args], input=input, **kwargs)
     
 
+    def find_main_and_set_exec_name(self) -> str:
+        for file in self.source_files:
+            with open(os.path.join(self.executable_dir, file), "r") as fo:
+                main_matches = re.findall(r"public\s+static\s+void\s+main", fo.read())
+                if main_matches:
+                    self.executable_name = file.split(".")[0]
+                    return
+        raise NoProgramError("Java program has no (public static void) main function!")
+
+
 
 class PythonProgram(SupportedLanguageProgram):
     '''
@@ -165,7 +188,7 @@ class PythonProgram(SupportedLanguageProgram):
     e.g., a student's submission, or an instructor's key program.
     '''
     PYTHON_COMMAND = "python3"
-    def __init__(self, executable_name: str, source_files: list[str], output_file_name: str):
+    def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
         if len(source_files) == 0:
             raise ValueError("No input files found!")
         elif len(source_files) == 1:
@@ -178,7 +201,8 @@ class PythonProgram(SupportedLanguageProgram):
 
         return super().__init__(
             SUPPORTED_LANGUAGES["PYTHON"], 
-            [], 
+            [],
+            executable_dir,
             exec_name,
             source_files[0], 
             source_files, 
@@ -201,7 +225,7 @@ SUPPORTED_LANGUAGES = {
 }
 
 
-OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE = {
+OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE: dict[SupportedLanguage, Type[SupportedLanguageProgram]] = {
     SUPPORTED_LANGUAGES["C"]    :   CProgram,
     SUPPORTED_LANGUAGES["CPP"]  :   CPPProgram,
     SUPPORTED_LANGUAGES["JAVA"] :   JavaProgram,
@@ -341,8 +365,8 @@ class VPLTestCase(unittest.TestCase):
             return key_program
     
 
-    @staticmethod
-    def detectLanguageAndMakeProgram(file_list: list[str], executable_name: str, output_file_name: str) -> SupportedLanguageProgram:
+    @classmethod
+    def detectLanguageAndMakeProgram(cls, file_list: list[str], executable_name: str, output_file_name: str) -> SupportedLanguageProgram:
         '''
         Searches file_list for items which have the extension of a supported programming language, 
         using the first match found. Returns an object of the appropriate 
@@ -370,7 +394,7 @@ class VPLTestCase(unittest.TestCase):
         # Call constructor for detected program class.
         if current_program_class is None:
             raise FileNotFoundError(f"No submission found, or couldn't infer programming language! Found files: {file_list}")
-        return current_program_class(executable_name, source_files, output_file_name)
+        return current_program_class(cls.THIS_DIR_NAME, executable_name, source_files, output_file_name)
 
 
     @classmethod

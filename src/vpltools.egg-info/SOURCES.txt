@@ -12,3 +12,4 @@ src/vpltools.egg-info/PKG-INFO
 src/vpltools.egg-info/SOURCES.txt
 src/vpltools.egg-info/dependency_links.txt
 src/vpltools.egg-info/top_level.txt
+tests/test_hello.py

@@ -38,7 +38,7 @@
 			"    '''",
 			"    Describe any peculiarities of the program being tested here.",
 			"    '''",
-			"    keySourceFiles = [\"${3:key_program_source.ext}\"]",
+			"    key_source_files = [\"${3:key_program_source.ext}\"]",
 			"    ignore_files = []",
 			"",
 			"    def ${4:test_function_name}(self):",
