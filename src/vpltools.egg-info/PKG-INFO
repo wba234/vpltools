@@ -57,6 +57,12 @@ In addition to the features of the ```unittest``` package, you can use the follo
    #### Important Attributes
    - ```key_source_files: list[str]``` - Set this in class scope to tell VPLTools which files in the local directory are part of the solution program. Can be empty.
    - ```ignore_files: list[str]``` - Set this in class scope to tell VPLTools which files in the local directory should be ignored.
+   - ```permitted_student_languages: list[SupportedLanguage]``` - Set this to restrict which programming languages are permitted. ```NoProgramError``` will be thrown if this is violated. Set to ```vpltools.SUPPORTED_LANGUAGES``` by default. Currently, the following languages are supported; use the strings below as keys in the ```SUPPORTED_LANGUAGES``` dictionary to refer to them when constructing your ```permitted_student_languages```. E.g., if you only want to allow C++, set ```permitted_student_languages = [ SUPPORTED_LANGUAGES["C++] ]```:
+        - ```"C"```
+        - ```"CPP"```
+        - ```"JAVA"```
+        - ```"PYTHON"```
+
    - ```student_py_module: ModuleType | None``` - Use this to access student functions directly (Python submissions only).
    - ```key_py_module: ModuleType | None``` - Use this to access solution program functions directly (Python solutions only).
    - ```student_outfile_name: str``` - Predefined name for student output files. This must be passed as an argument to student programs when invoking them with ```run_student_program()```. This means that student programs must accept the name of an output file as one of their program's inputs.
@@ -191,7 +197,6 @@ In addition to ```VPLTestCase``` VPLTools also provides some classes which suppo
 There is a snippet for this boilerplate in ```/.vscode```. The format of the snippet (JSON) is a little specific to VSCode, but the code can be extracted relatively easily. Type ```test``` in a snakefile to trigger the snippet. 
 
 # To Do
-- Add a method for defining a set of permitted programming languages.
 - Add a method for writing student and key output files to memory mapped files, for speed.
 - Add a method for writing each test output file from the key program to a separate file, so that they can be cached, for speed.
 - SQL Unittets need their 

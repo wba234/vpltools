@@ -347,7 +347,7 @@ class VPLTestCase(unittest.TestCase):
         )
         student_program.compile(cls.THIS_DIR_NAME)
 
-        if student_program.language not in cls.permitted_student_languages:
+        if student_program.language not in cls.permitted_student_languages.values():
             raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {cls.permitted_student_languages}")
         
         return student_program
