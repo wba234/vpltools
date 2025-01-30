@@ -193,12 +193,14 @@ There is a snippet for this boilerplate in ```/.vscode```. The format of the sni
 - Using Key Output Files instead of Re-running Key program each time. This can speed up submission processing. See the ```VPLTestCase.use_pre_computed_key```.
 
 ## Installation
+To use this with Moodle VPLs, you will need to install this package into your Moodle VPLJail manually. At time of writing, ```vpltools``` is _not_ in the Python Package Index. To install manually:
 1. Download this repository.
 2. Navigate (i.e. ```cd```) into the top-level folder of the repository. You should see a file called ```pyproject.toml```.
-3. In a terminal, run ```python3 -m pip install .``` to install the program. You may want to install this in "editable" mode by adding ```-e``` or ```--editable```:
-```python3 -m pip install --editable .```
+3. In a terminal, run ```python3 -m pip install .``` to install the program. If you are actively developing this module, you may want to install this in "editable" mode by adding ```-e``` or ```--editable```
+```python3 -m pip install -editable .```. 
+### Installing in VPLJail
+You _should not_ install this in editable mode in the VPLJail. This will cause the package not to be found by the Python interpreter. Also, after installing anything into the VPLJail, you should restart the service with: ```systemctl restart vpl-jail-service```.
 
-__Note:__ To use this with Moodle VPLs, you will need to install this package into your Moodle VPLJail manually. At time of writing, ```vpltools``` is NOT in the Python Package Index.
 
 ## Build Process
 1. Navigate to top level directory.
@@ -228,7 +230,7 @@ __Note:__ To use this with Moodle VPLs, you will need to install this package in
 # Python packaging Tutorial Commands
 This module was packaged by following and adapting to the [Python.org packaging tutorial](https://packaging.python.org/en/latest/tutorials/packaging-projects/), around January 2024.
 A summary of the commands used is below, along with the suggested directory structure:
-```
+```console
 ~/Documents/vpltools/
    |- tests/
    |- src/
@@ -241,11 +243,11 @@ A summary of the commands used is below, along with the suggested directory stru
 ```
 
 The commands are fun from within the top-level module directory: ```~/Documents/vpltools/```
-```
-$ python3.10 -m pip install --upgrade build  # failed?
-$ python3.10 -m build                        # failed to create virtual environment
-$ sudo apt-install python3.10-venv           # OK with password
-$ python3.10 -m build                        # Build succeeded
+```bash
+python3.10 -m pip install --upgrade build  # failed?
+python3.10 -m build                        # failed to create virtual environment
+sudo apt-install python3.10-venv           # OK with password
+python3.10 -m build                        # Build succeeded
 ```
 
 But usually, if everything is installed, you can just:
