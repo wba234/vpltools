@@ -274,13 +274,18 @@ class VPLTestCase(unittest.TestCase):
     student_outfile_name = "student_outfile"
 
     @classmethod
+    def set_this_dir_name(cls):
+        abs_path_to_this_file = sys.modules[cls.__module__].__file__
+        cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file)
+        print(cls.THIS_DIR_NAME)
+
+    @classmethod
     def setUpClass(cls):
         '''
         Locates student and key modules, compiling if necessary.
         Imports python modules, and runs basic tests on student modules.
         '''
-        abs_path_to_this_file = sys.modules[cls.__module__].__file__
-        cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file)
+        cls.set_this_dir_name()
 
         if cls.key_source_files is None:
             warnings.warn("key_source_files unspecified! Assuming no key program. \nInitialize this class attribute to an empty list to silence this warning.")
@@ -325,21 +330,25 @@ class VPLTestCase(unittest.TestCase):
     
 
     @classmethod
+    def find_student_files(cls):
+        # if override_THIS_DIR_NAME is not None:
+            # cls.THIS_DIR_NAME = override_THIS_DIR_NAME
+        return [ file for file in os.listdir(cls.THIS_DIR_NAME) 
+                if file not in cls.key_source_files 
+                    and file not in cls.ignore_files
+                    and file not in cls.VPL_SYSTEM_FILES
+                    and file != cls.THIS_FILE_NAME
+                    and not file.startswith("__")]
+
+
+    @classmethod
     def compile_student_program(cls):
         '''
         Language-agnostic logic for finding an compiling student programs. 
         Returns a SupportedLanguageProgram object which can be used to 
         invoke the program.
         '''
-        student_source_files = [ 
-            file for file in os.listdir(cls.THIS_DIR_NAME) 
-            if file not in cls.key_source_files 
-                    and file not in cls.ignore_files
-                    and file not in cls.VPL_SYSTEM_FILES
-                    and file != cls.THIS_FILE_NAME
-                    and not file.startswith("__")
-        ]
-
+        student_source_files = cls.find_student_files()
         student_program = cls.detectLanguageAndMakeProgram(
             student_source_files, 
             cls.student_program_name, 
