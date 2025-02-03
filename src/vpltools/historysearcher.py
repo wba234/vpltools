@@ -25,7 +25,6 @@ class HistorySearcher(VPLTestCase):
     @classmethod
     def setUpClass(cls):
         cls.set_this_dir_name()
-        print(cls.THIS_DIR_NAME)
 
 
     def test_each_command_in_history(self):
