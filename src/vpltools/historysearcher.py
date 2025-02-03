@@ -27,10 +27,6 @@ class HistorySearcher(VPLTestCase):
         cls.set_this_dir_name()
         print(cls.THIS_DIR_NAME)
 
-    @classmethod
-    def tearDownClass(cls):
-        pass    # Skip the usual teardown, nothing to do.
-
 
     def test_each_command_in_history(self):
         # pass

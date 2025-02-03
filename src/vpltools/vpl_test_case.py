@@ -273,6 +273,9 @@ class VPLTestCase(unittest.TestCase):
     student_program_name = "student_program"
     student_outfile_name = "student_outfile"
 
+    student_program = None
+    key_program = None
+
     @classmethod
     def set_this_dir_name(cls):
         abs_path_to_this_file = sys.modules[cls.__module__].__file__
