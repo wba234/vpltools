@@ -255,8 +255,12 @@ class VPLTestCase(unittest.TestCase):
     VPL_SYSTEM_FILES = [ 
         "vpl_test",
         ".vpl_tester",
+        ".vpl_launcher.sh",
         "vpl_execution",
         "vpl_evaluate.cases",
+        "common_script.sh",
+        "vpl_environment.sh",
+        "vpl_compilation_error.txt",
     ]
 
     key_source_files = None
