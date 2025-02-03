@@ -263,8 +263,16 @@ class VPLTestCase(unittest.TestCase):
         "vpl_compilation_error.txt",
     ]
 
+    NON_EXECUTABLE_EXTENSIONS = [
+        ".pdf",
+        ".jpeg",
+        ".jpg",
+        ".svg",
+    ]
+
     key_source_files = None
     ignore_files = []
+    ignore_extensions = []
     permitted_student_languages = SUPPORTED_LANGUAGES
     run_basic_tests = []
     # skip_basic_tests = vpltools.BASIC_TESTS
@@ -284,7 +292,7 @@ class VPLTestCase(unittest.TestCase):
     def set_this_dir_name(cls):
         abs_path_to_this_file = sys.modules[cls.__module__].__file__
         cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file)
-        print(cls.THIS_DIR_NAME)
+    
 
     @classmethod
     def setUpClass(cls):
@@ -345,7 +353,9 @@ class VPLTestCase(unittest.TestCase):
                     and file not in cls.ignore_files
                     and file not in cls.VPL_SYSTEM_FILES
                     and file != cls.THIS_FILE_NAME
-                    and not file.startswith("__")]
+                    and not file.startswith("__")
+                    and not any(file.endswith(nee) for nee in cls.NON_EXECUTABLE_EXTENSIONS)
+                    and not any(file.endswith(ife) for ife in cls.ignore_extensions)]
 
 
     @classmethod
