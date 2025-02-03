@@ -278,6 +278,8 @@ class VPLTestCase(unittest.TestCase):
     # skip_basic_tests = vpltools.BASIC_TESTS
     include_pylint = False
 
+    mask_extension = ".save"
+    files_renamed: list[tuple[str, str]] = [] # old name, new_name
 
     key_program_name = "key_program"
     key_outfile_name = "key_outfile"
@@ -397,6 +399,26 @@ class VPLTestCase(unittest.TestCase):
     
 
     @classmethod
+    def unmask_hidden_files(cls, file_list: list[str]):
+        '''
+        To avoid encountering problems with VPL's standard compilation
+        behavior, we can't have multiple files with valid extensions 
+        containing main functions. Key files will be manually renamed
+        (when provided) with a second extension to mask the desired one.
+        This function removes all masking extensions, in place.
+        '''
+        for i in range(len(file_list)):
+            if file_list[i].endswith(cls.mask_extension):
+                new_name = file_list[i][:-len(cls.mask_extension)]
+                os.rename(
+                    os.path.join(cls.THIS_DIR_NAME, file_list[i]),
+                    os.path.join(cls.THIS_DIR_NAME, new_name)
+                )
+                cls.files_renamed.append((file_list[i] , new_name))
+                file_list[i] = new_name
+
+
+    @classmethod
     def detectLanguageAndMakeProgram(cls, file_list: list[str], executable_name: str, output_file_name: str) -> SupportedLanguageProgram:
         '''
         Searches file_list for items which have the extension of a supported programming language, 
@@ -409,6 +431,7 @@ class VPLTestCase(unittest.TestCase):
         current_program_lang = None
         current_program_class = None
         source_files = []
+        cls.unmask_hidden_files(file_list)
         for file in file_list:
             for supported_lang, lang_program_class in OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE.items():
                 if current_program_lang is not None and current_program_lang != supported_lang:
@@ -429,11 +452,21 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
+    def remask_hidden_files(cls):
+        for old_name, new_name in cls.files_renamed:
+            os.rename(
+                os.path.join(cls.THIS_DIR_NAME, new_name),
+                os.path.join(cls.THIS_DIR_NAME, old_name)
+            )
+
+
+    @classmethod
     def tearDownClass(cls):
         '''
         Find all names of unittest.TestCase test_* methods, and write them to 
         a file in the same directory as the subclass of this.
         '''
+
         test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
         vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
         vpltools.make_cases_file_from_list(
@@ -441,6 +474,7 @@ class VPLTestCase(unittest.TestCase):
             vpl_test_tuples,
             cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False
         )
+        cls.remask_hidden_files()
         return super().tearDownClass()
     
 
