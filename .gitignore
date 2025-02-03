@@ -1,3 +1,13 @@
+# Ignore bytecode files and directories.
 *.pyc
 **/__pycache__/
+
+# Ignore packaging and distribution directories.
+build/
+dist/
+
+# Ignore my settings file, but not the snippets file.
+.vscode/settings.json
+
+# Ignore my virtual environment.
 everyenv/*
