@@ -6,6 +6,7 @@ import os.path
 import warnings
 import importlib
 import re
+import enum
 from typing import Type
 from types import FunctionType
 from copy import copy
@@ -14,7 +15,7 @@ from dataclasses import dataclass
 import vpltools
 import vpltools.basic_tests
 
-__unittest = True
+# __unittest = True
 
 class NoProgramError(RuntimeError):
     pass
@@ -107,7 +108,7 @@ class CProgram(SupportedLanguageProgram):
     '''
     def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
         return super().__init__(
-            SUPPORTED_LANGUAGES["C"], 
+            SupportedLanguages.C, 
             [ "gcc", "-o", executable_name ] + source_files + ["-lm"], 
             "main", 
             executable_dir,
@@ -132,7 +133,7 @@ class CPPProgram(SupportedLanguageProgram):
     '''
     def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
         return super().__init__(
-            SUPPORTED_LANGUAGES["CPP"], 
+            SupportedLanguages.CPP 
             [ "g++", "-o", executable_name] + source_files + ["-lm"], 
             "main", 
             executable_dir,
@@ -159,7 +160,7 @@ class JavaProgram(SupportedLanguageProgram):
         '''
         Note that executable_name
         '''
-        super().__init__(SUPPORTED_LANGUAGES["JAVA"], ["javac"], "main", executable_dir, executable_name, source_files, output_file_name)
+        super().__init__(SupportedLanguages.Java, ["javac"], "main", executable_dir, executable_name, source_files, output_file_name)
         self.find_main_and_set_exec_name()
     
 
@@ -200,7 +201,7 @@ class PythonProgram(SupportedLanguageProgram):
                 raise ValueError("If you have more than 1 file, you must name one of them main.py!")
 
         return super().__init__(
-            SUPPORTED_LANGUAGES["PYTHON"], 
+            SupportedLanguages.Python, 
             [],
             executable_dir,
             exec_name,
@@ -215,21 +216,28 @@ class PythonProgram(SupportedLanguageProgram):
 
     def run(self, cli_args, input="", **kwargs):
         return subprocess.run([self.PYTHON_COMMAND, self.executable_name, *cli_args], input=input, **kwargs)
-    
-
-SUPPORTED_LANGUAGES = {
-    "C"     : SupportedLanguage("C", ".c"),
-    "CPP"   : SupportedLanguage("C++", ".cpp"),
-    "JAVA"  : SupportedLanguage("Java", ".java"),
-    "PYTHON": SupportedLanguage("Python", ".py")
-}
 
 
-OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE: dict[SupportedLanguage, Type[SupportedLanguageProgram]] = {
-    SUPPORTED_LANGUAGES["C"]    :   CProgram,
-    SUPPORTED_LANGUAGES["CPP"]  :   CPPProgram,
-    SUPPORTED_LANGUAGES["JAVA"] :   JavaProgram,
-    SUPPORTED_LANGUAGES["PYTHON"]:  PythonProgram,
+class SupportedLanguages(enum.Enum):
+    C = SupportedLanguage("C", ".c")
+    CPP = SupportedLanguage("C++", ".cpp")
+    Java = SupportedLanguage("Java", ".java")
+    Python = SupportedLanguage("Python", ".py")
+
+
+# SUPPORTED_LANGUAGES = {
+#     "C"     : SupportedLanguages.C,
+#     "CPP"   : SupportedLanguages.CPP,
+#     "JAVA"  : SupportedLanguages.Java,
+#     "PYTHON": SupportedLanguages.Python
+# }
+
+
+OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE: dict[SupportedLanguages, Type[SupportedLanguageProgram]] = {
+    SupportedLanguages.C        :   CProgram,
+    SupportedLanguages.CPP      :   CPPProgram,
+    SupportedLanguages.Java     :   JavaProgram,
+    SupportedLanguages.Python   :  PythonProgram,
 }
 
 
@@ -273,7 +281,7 @@ class VPLTestCase(unittest.TestCase):
     key_source_files = None
     ignore_files = []
     ignore_extensions = []
-    permitted_student_languages = SUPPORTED_LANGUAGES
+    permitted_student_languages = list(SupportedLanguages)
     run_basic_tests = []
     # skip_basic_tests = vpltools.BASIC_TESTS
     include_pylint = False
@@ -375,7 +383,7 @@ class VPLTestCase(unittest.TestCase):
         )
         student_program.compile(cls.THIS_DIR_NAME)
 
-        if student_program.language not in cls.permitted_student_languages.values():
+        if student_program.language not in cls.permitted_student_languages:
             raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {cls.permitted_student_languages}")
         
         return student_program
@@ -428,8 +436,8 @@ class VPLTestCase(unittest.TestCase):
         if file_list == []:
             return 
 
-        current_program_lang = None
-        current_program_class = None
+        current_program_lang: SupportedLanguages = None
+        current_program_class: SupportedLanguageProgram = None
         source_files = []
         cls.unmask_hidden_files(file_list)
         for file in file_list:
@@ -437,12 +445,12 @@ class VPLTestCase(unittest.TestCase):
                 if current_program_lang is not None and current_program_lang != supported_lang:
                     continue # We're already found our language, and this is not it.
 
-                if current_program_lang is None and file.endswith(supported_lang.extension):
+                if current_program_lang is None and file.endswith(supported_lang.value.extension):
                     current_program_lang = supported_lang
                     current_program_class = lang_program_class
                     source_files.append(file)
 
-                elif current_program_lang is not None and file.endswith(current_program_lang.extension):
+                elif current_program_lang is not None and file.endswith(current_program_lang.value.extension):
                     source_files.append(file)
 
         # Call constructor for detected program class.
