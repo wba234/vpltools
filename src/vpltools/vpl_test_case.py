@@ -198,7 +198,7 @@ class PythonProgram(SupportedLanguageProgram):
             if "main" in source_files:
                 exec_name = source_files.index("main")
             else:
-                raise ValueError("If you have more than 1 file, you must name one of them main.py!")
+                raise ValueError(f"If you have more than 1 file, you must name one of them main.py! Found {source_files}")
 
         return super().__init__(
             SupportedLanguages.Python, 

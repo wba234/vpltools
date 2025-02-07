@@ -1,52 +1,67 @@
-import os.path
-import argparse
 import os
+import unittest
+import warnings
+import sys
+
+from vpltools import VPLTestCase
 
 __unittest = True
 
-class HistorySearcher:
-    def __init__(self, commands_to_find):
-        self.commands_to_find = commands_to_find
-        self.max_command_len = max([len(command) for command in commands_to_find])
+class HistorySearcher(VPLTestCase):
+    # __test__ = False
+    key_source_files = []
+    commands_to_find = []
+    ignore_files = [
+        "assignment_description.html",
+        "tux.png",
+        "PathsExample.drawio.svg",
+        "LinuxDirectoryStructure.drawio.svg"
+    ]
+    command_found_emoji = {
+        True    : "\N{heavy check mark}",
+        False   : "\N{warning sign}"
+    }
 
-        self.parser = argparse.ArgumentParser()
-        self.parser.add_argument("history_file")
+    @classmethod
+    def setUpClass(cls):
+        cls.set_this_dir_name()
 
 
-    def add_command(self, command):
-        self.commands_to_find.append(command)
-        self.max_command_len = max(len(command), self.max_command_len)
+    def test_each_command_in_history(self):
+        # pass
 
+        student_history_files = self.find_student_files()
+        if len(student_history_files) != 1:
+            raise RuntimeError("Must have exactly one history file. "
+                + f"Found {len(student_history_files)} files: {student_history_files}")
 
-    def get_hist_file_contents(self, history_file_name):
-        cwd = os.getcwd()
-        hist_file_path = os.path.join(cwd, history_file_name)
-        print()
+        self.student_history_file = student_history_files[0]
+        # return
+        if len(self.commands_to_find) == 0:
+            self.fail(f"Empty list! Please define commands_to_find (list[str])!")
+            
+
+        max_command_len = max(len(command) for command in self.commands_to_find)
+        
+        # cwd = os.getcwd()
+        hist_file_path = os.path.join(self.THIS_DIR_NAME, self.student_history_file)
         with open(hist_file_path, "r") as hist_fo:
             hist_file_contents = hist_fo.read()
 
-        return hist_file_contents
-
-
-    def check_for_commands(self, commands, hist_file_contents):
         num_commands_found = 0
-        for command in commands:
-            if command in hist_file_contents:
-                num_commands_found += 1
-                summary_emoji = "\N{heavy check mark}"
-            else:
-                summary_emoji = "\N{warning sign}"
-
+        for command in self.commands_to_find:
+            command_was_found = command in hist_file_contents
+            num_commands_found += 1 if command_was_found else 0
+            summary_emoji = self.command_found_emoji[command_was_found]
             summary_line = f"{summary_emoji}  {command}"
             print(summary_line)
 
         padding = 5
-        print("-" * (self.max_command_len + padding))
-        print(f"{num_commands_found} / {len(commands)} commands found ({num_commands_found / len(commands) * 100:.0f}%)")
+        print("-" * (max_command_len + padding))
+        print(f"{num_commands_found} of {len(self.commands_to_find)} commands found ({num_commands_found / len(self.commands_to_find) * 100:.0f}%)")
 
+        if num_commands_found != len(self.commands_to_find):
+            self.fail(msg=f"Expected all commands to be run, got {num_commands_found} of {len(self.commands_to_find)}")
 
-    def search(self):
-        args = self.parser.parse_args()
-        hist_file_contents = self.get_hist_file_contents(args.history_file)
-        self.check_for_commands(self.commands_to_find, hist_file_contents)
-
+if __name__ == "__main__":
+    unittest.main()
