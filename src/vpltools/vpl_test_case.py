@@ -369,7 +369,7 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def compile_student_program(cls):
+    def compile_student_program(cls, recompile=False):
         '''
         Language-agnostic logic for finding an compiling student programs. 
         Returns a SupportedLanguageProgram object which can be used to 
@@ -381,7 +381,7 @@ class VPLTestCase(unittest.TestCase):
             cls.student_program_name, 
             cls.student_program_name
         )
-        student_program.compile(cls.THIS_DIR_NAME)
+        student_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
 
         if student_program.language not in cls.permitted_student_languages:
             raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {cls.permitted_student_languages}")
@@ -390,7 +390,7 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def compile_key_program(cls):
+    def compile_key_program(cls, recompile=False):
         '''
         Language-agnostic logic for finding an compiling key programs. 
         Returns a SupportedLanguageProgram object which can be used to 
@@ -402,7 +402,7 @@ class VPLTestCase(unittest.TestCase):
             cls.key_outfile_name
         )
         if key_program is not None:
-            key_program.compile(cls.THIS_DIR_NAME)
+            key_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
             return key_program
     
 
@@ -523,6 +523,11 @@ class VPLTestCase(unittest.TestCase):
         if cls.student_program is None:
             raise NoProgramError("Student program not found!")
 
+        try:
+            return cls.student_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
+        except OSError: # Existing executable, wrong architecture?
+            cls.student_program.compile(cls.THIS_DIR_NAME, recompile=True)
+
         return cls.student_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
     
     
@@ -534,6 +539,11 @@ class VPLTestCase(unittest.TestCase):
         '''
         if cls.key_program is None:
             raise NoProgramError("Key program not found!")
+
+        try:
+            return cls.key_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
+        except OSError: # Existing executable, wrong architecture?
+            cls.key_program.compile(cls.THIS_DIR_NAME, recompile=True)
 
         return cls.key_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
 
