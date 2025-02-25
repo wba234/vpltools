@@ -20,6 +20,9 @@ import vpltools.basic_tests
 class NoProgramError(RuntimeError):
     pass
 
+class UnsupportedFeatureError(RuntimeError):
+    pass
+
 @dataclass
 class SupportedLanguage(abc.ABC):
     name: str
@@ -165,6 +168,12 @@ class JavaProgram(SupportedLanguageProgram):
     
 
     def compilationCommand(self):
+        for source_file in self.source_files:
+            with open(os.path.join(self.executable_dir, source_file), "r") as fp:
+                file_contents = fp.read()
+                if re.search("^\\s*package\\s*.*;", file_contents, flags=re.MULTILINE) is not None:
+                    raise UnsupportedFeatureError("Running Java packages is not supported by vpltools. Please remove the package statements.")
+
         return self.compilation_commands + self.source_files
 
 

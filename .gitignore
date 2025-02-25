@@ -1,6 +1,7 @@
 # Ignore bytecode files and directories.
 *.pyc
 **/__pycache__/
+**.class
 
 # Ignore packaging and distribution directories.
 build/
