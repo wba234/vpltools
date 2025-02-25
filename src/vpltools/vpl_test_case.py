@@ -295,6 +295,8 @@ class VPLTestCase(unittest.TestCase):
     # skip_basic_tests = vpltools.BASIC_TESTS
     include_pylint = False
 
+    make_vpl_evaluate_cases_file = True
+
     mask_extension = ".save"
     files_renamed: list[tuple[str, str]] = [] # old name, new_name
 
@@ -483,14 +485,15 @@ class VPLTestCase(unittest.TestCase):
         Find all names of unittest.TestCase test_* methods, and write them to 
         a file in the same directory as the subclass of this.
         '''
+        if cls.make_vpl_evaluate_cases_file: 
+            test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
+            vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
+            vpltools.make_cases_file_from_list(
+                cls.THIS_DIR_NAME,
+                vpl_test_tuples,
+                cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False
+            )
 
-        test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
-        vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
-        vpltools.make_cases_file_from_list(
-            cls.THIS_DIR_NAME,
-            vpl_test_tuples,
-            cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False
-        )
         cls.remask_hidden_files()
         return super().tearDownClass()
     
