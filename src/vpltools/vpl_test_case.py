@@ -336,7 +336,9 @@ class VPLTestCase(unittest.TestCase):
             "capture_output": True, 
             "text"          : True,
             # "timeout"       : 15,
-            "check"         : True, # Raise CalledProcessError on non-zero exit code.
+            # "check"         : True, # Raise CalledProcessError on non-zero exit code. 
+            # ^^ Removed, so that subclasses have error handling, reporting responsibility.
+            #    This package should not be noticed. As the penguins say; "You didn't see anything..."
         }
         # Add current directory to PATH, so we can find our compiled binaries.
         cls.subprocess_run_options["env"].update({ "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME }),
@@ -355,14 +357,21 @@ class VPLTestCase(unittest.TestCase):
     def import_as_py_module(cls, program: SupportedLanguageProgram, run_basic_tests: list[FunctionType] = []):
         '''
         Returns a module object if program is a Python program, None otherwise. 
-        Runs basic tests if flag is set.
+        None will also be returned if the import fails for any reason. This can happen 
+        if a Python script which expects arguments (which will not be suppplied during import).
+        Runs each of the basic tests suppplied.
         '''
-        if isinstance(program, PythonProgram):
-            module = importlib.import_module(os.path.splitext(program.executable_name)[0])
-            vpltools.run_basic_tests(module, run_basic_tests)
-            return module
+        if not isinstance(program, PythonProgram):
+            return None
         
-        return None
+        try:
+            module = importlib.import_module(os.path.splitext(program.executable_name)[0])
+        except: # In ANY part of the import fails, then return None.
+            return None
+        
+        vpltools.run_basic_tests(module, run_basic_tests)
+        return module
+
     
 
     @classmethod
@@ -397,6 +406,7 @@ class VPLTestCase(unittest.TestCase):
         if student_program.language not in cls.permitted_student_languages:
             raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {cls.permitted_student_languages}")
         
+        print("Stu program:", *student_program.source_files)
         return student_program
 
 
@@ -414,6 +424,7 @@ class VPLTestCase(unittest.TestCase):
         )
         if key_program is not None:
             key_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
+            print("Key program:", *key_program.source_files)
             return key_program
     
 
