@@ -399,7 +399,8 @@ class VPLTestCase(unittest.TestCase):
         student_program = cls.detectLanguageAndMakeProgram(
             student_source_files, 
             cls.student_program_name, 
-            cls.student_program_name
+            cls.student_program_name,
+            unmask_hidden_files=False
         )
         student_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
 
@@ -420,7 +421,8 @@ class VPLTestCase(unittest.TestCase):
         key_program = cls.detectLanguageAndMakeProgram(
             cls.key_source_files,
             cls.key_program_name,
-            cls.key_outfile_name
+            cls.key_outfile_name,
+            unmask_hidden_files=True
         )
         if key_program is not None:
             key_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
@@ -449,7 +451,7 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def detectLanguageAndMakeProgram(cls, file_list: list[str], executable_name: str, output_file_name: str) -> SupportedLanguageProgram:
+    def detectLanguageAndMakeProgram(cls, file_list: list[str], executable_name: str, output_file_name: str, unmask_hidden_files: bool=False) -> SupportedLanguageProgram:
         '''
         Searches file_list for items which have the extension of a supported programming language, 
         using the first match found. Returns an object of the appropriate 
@@ -461,7 +463,10 @@ class VPLTestCase(unittest.TestCase):
         current_program_lang: SupportedLanguages = None
         current_program_class: SupportedLanguageProgram = None
         source_files = []
-        cls.unmask_hidden_files(file_list)
+        
+        if unmask_hidden_files:
+            cls.unmask_hidden_files(file_list)
+
         for file in file_list:
             for supported_lang, lang_program_class in OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE.items():
                 if current_program_lang is not None and current_program_lang != supported_lang:
@@ -537,39 +542,60 @@ class VPLTestCase(unittest.TestCase):
         return vpl_test_tuples
     
 
-    @classmethod
-    def run_student_program(cls, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
+    def run_student_program(self, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
         '''
         Execute the student's program in a subprocess, providing the given arguments, and 
         input string. Uses the environment of the calling VPLTestCase subclass.
         '''
-        if cls.student_program is None:
+        if self.student_program is None:
             raise NoProgramError("Student program not found!")
 
+        # A few things could go wrong here. You could be testing on multiple machines, and 
+        # and your Git repo contains an old executable which is not compatiable with the 
+        # current machine. This raises OSError, so recompile and try again.
+        # Another potential problem is that the program runs, but experiences some kind of 
+        # runtime error. This is not raised as an exception (see the subprocess_run_options)
+        # but it does mean that we should fail the current test, and log the error to stdout.
         try:
-            return cls.student_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
+            student_process = self.student_program.run(cli_args, input=input_string, **self.subprocess_run_options, **more_subprocess_run_kwargs)
         except OSError: # Existing executable, wrong architecture?
-            cls.student_program.compile(cls.THIS_DIR_NAME, recompile=True)
+            self.student_program.compile(self.THIS_DIR_NAME, recompile=True)
+            student_process = self.student_program.run(cli_args, input=input_string, **self.subprocess_run_options, **more_subprocess_run_kwargs)
+        
+        if student_process.returncode != 0:
+            self.fail(msg=(f"\n\nYOUR PROGRAM CRASHED WITH THE COMMAND:\n"
+                + f"> {' '.join(student_process.args)}\n\n"
+                + "Verify that the command above works offline.\n\n"
+                + f"ERROR MESSAGE FROM YOUR PROGRAM:\n"
+                + "> " + student_process.stderr.replace("\n", "\n> ")))
 
-        return cls.student_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
+        return student_process
     
-    
-    @classmethod
-    def run_key_program(cls, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
+
+    def run_key_program(self, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
         '''
         Execute the key program in a subprocess, providing the given arguments, and 
         input string. Uses the environment of the calling VPLTestCase subclass.
         '''
-        if cls.key_program is None:
+        if self.key_program is None:
             raise NoProgramError("Key program not found!")
 
+        # A few things could go wrong here. See run_student_program for details.
         try:
-            return cls.key_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
+            key_process = self.key_program.run(cli_args, input=input_string, **self.subprocess_run_options, **more_subprocess_run_kwargs)
         except OSError: # Existing executable, wrong architecture?
-            cls.key_program.compile(cls.THIS_DIR_NAME, recompile=True)
+            self.key_program.compile(self.THIS_DIR_NAME, recompile=True)
+            key_process = self.key_program.run(cli_args, input=input_string, **self.subprocess_run_options, **more_subprocess_run_kwargs)
 
-        return cls.key_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
+        if key_process.returncode != 0:
+            self.fail(msg=(f"!!! THE KEY PROGRAM CRASHED WITH THE COMMAND:\n"
+                + f"> {key_process.args}\n"
+                + "!!! Send this error message in an email to your instructor.\n"
+                + "!!! You may be eligible to collect a bug bounty.\n\n"
+                + "ERROR MESSAGE FROM KEY PROGRAM:\n"
+                + "> " + key_process.stderr.replace("\n", "\n> ")))
 
+        return key_process
 
 if __name__ == "__main__":
     print("Are you lost? You look lost.")
