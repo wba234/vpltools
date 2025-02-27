@@ -1,12 +1,12 @@
 
 import re
-from vpltools import VPLTestCase
+import vpltools
 
 __unittest = True # Keep, to silence tracebacks.
 
 # TODO: These should both use match, or fullmatch, or provide a flag.
 # class RegexTestCase(unittest.TestCase):
-class RegexTestCase(VPLTestCase):
+class RegexTestCase(vpltools.VPLTestCase):
     TEXT = "text"
     FIND = "find"
     CAPT = "capture"
