@@ -11,6 +11,7 @@ from typing import Type
 from types import FunctionType
 from copy import copy
 from dataclasses import dataclass
+import contextlib
 
 import vpltools
 import vpltools.basic_tests
@@ -365,7 +366,9 @@ class VPLTestCase(unittest.TestCase):
             return None
         
         try:
-            module = importlib.import_module(os.path.splitext(program.executable_name)[0])
+            with contextlib.redirect_stdout(os.devnull, "w"):
+                module = importlib.import_module(os.path.splitext(program.executable_name)[0])
+                # I don't want any output from student modules when importing.
         except: # In ANY part of the import fails, then return None.
             return None
         
