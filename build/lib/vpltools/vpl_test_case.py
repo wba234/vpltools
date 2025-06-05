@@ -6,6 +6,7 @@ import os.path
 import warnings
 import importlib
 import re
+import enum
 from typing import Type
 from types import FunctionType
 from copy import copy
@@ -14,7 +15,7 @@ from dataclasses import dataclass
 import vpltools
 import vpltools.basic_tests
 
-__unittest = True
+# __unittest = True
 
 class NoProgramError(RuntimeError):
     pass
@@ -107,7 +108,7 @@ class CProgram(SupportedLanguageProgram):
     '''
     def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
         return super().__init__(
-            SUPPORTED_LANGUAGES["C"], 
+            SupportedLanguages.C, 
             [ "gcc", "-o", executable_name ] + source_files + ["-lm"], 
             "main", 
             executable_dir,
@@ -132,7 +133,7 @@ class CPPProgram(SupportedLanguageProgram):
     '''
     def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
         return super().__init__(
-            SUPPORTED_LANGUAGES["CPP"], 
+            SupportedLanguages.CPP 
             [ "g++", "-o", executable_name] + source_files + ["-lm"], 
             "main", 
             executable_dir,
@@ -159,7 +160,7 @@ class JavaProgram(SupportedLanguageProgram):
         '''
         Note that executable_name
         '''
-        super().__init__(SUPPORTED_LANGUAGES["JAVA"], ["javac"], "main", executable_dir, executable_name, source_files, output_file_name)
+        super().__init__(SupportedLanguages.Java, ["javac"], "main", executable_dir, executable_name, source_files, output_file_name)
         self.find_main_and_set_exec_name()
     
 
@@ -200,7 +201,7 @@ class PythonProgram(SupportedLanguageProgram):
                 raise ValueError("If you have more than 1 file, you must name one of them main.py!")
 
         return super().__init__(
-            SUPPORTED_LANGUAGES["PYTHON"], 
+            SupportedLanguages.Python, 
             [],
             executable_dir,
             exec_name,
@@ -215,21 +216,28 @@ class PythonProgram(SupportedLanguageProgram):
 
     def run(self, cli_args, input="", **kwargs):
         return subprocess.run([self.PYTHON_COMMAND, self.executable_name, *cli_args], input=input, **kwargs)
-    
-
-SUPPORTED_LANGUAGES = {
-    "C"     : SupportedLanguage("C", ".c"),
-    "CPP"   : SupportedLanguage("C++", ".cpp"),
-    "JAVA"  : SupportedLanguage("Java", ".java"),
-    "PYTHON": SupportedLanguage("Python", ".py")
-}
 
 
-OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE: dict[SupportedLanguage, Type[SupportedLanguageProgram]] = {
-    SUPPORTED_LANGUAGES["C"]    :   CProgram,
-    SUPPORTED_LANGUAGES["CPP"]  :   CPPProgram,
-    SUPPORTED_LANGUAGES["JAVA"] :   JavaProgram,
-    SUPPORTED_LANGUAGES["PYTHON"]:  PythonProgram,
+class SupportedLanguages(enum.Enum):
+    C = SupportedLanguage("C", ".c")
+    CPP = SupportedLanguage("C++", ".cpp")
+    Java = SupportedLanguage("Java", ".java")
+    Python = SupportedLanguage("Python", ".py")
+
+
+# SUPPORTED_LANGUAGES = {
+#     "C"     : SupportedLanguages.C,
+#     "CPP"   : SupportedLanguages.CPP,
+#     "JAVA"  : SupportedLanguages.Java,
+#     "PYTHON": SupportedLanguages.Python
+# }
+
+
+OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE: dict[SupportedLanguages, Type[SupportedLanguageProgram]] = {
+    SupportedLanguages.C        :   CProgram,
+    SupportedLanguages.CPP      :   CPPProgram,
+    SupportedLanguages.Java     :   JavaProgram,
+    SupportedLanguages.Python   :  PythonProgram,
 }
 
 
@@ -255,17 +263,31 @@ class VPLTestCase(unittest.TestCase):
     VPL_SYSTEM_FILES = [ 
         "vpl_test",
         ".vpl_tester",
+        ".vpl_launcher.sh",
         "vpl_execution",
         "vpl_evaluate.cases",
+        "common_script.sh",
+        "vpl_environment.sh",
+        "vpl_compilation_error.txt",
+    ]
+
+    NON_EXECUTABLE_EXTENSIONS = [
+        ".pdf",
+        ".jpeg",
+        ".jpg",
+        ".svg",
     ]
 
     key_source_files = None
     ignore_files = []
-    permitted_student_languages = SUPPORTED_LANGUAGES
+    ignore_extensions = []
+    permitted_student_languages = list(SupportedLanguages)
     run_basic_tests = []
     # skip_basic_tests = vpltools.BASIC_TESTS
     include_pylint = False
 
+    mask_extension = ".save"
+    files_renamed: list[tuple[str, str]] = [] # old name, new_name
 
     key_program_name = "key_program"
     key_outfile_name = "key_outfile"
@@ -273,14 +295,22 @@ class VPLTestCase(unittest.TestCase):
     student_program_name = "student_program"
     student_outfile_name = "student_outfile"
 
+    student_program = None
+    key_program = None
+
+    @classmethod
+    def set_this_dir_name(cls):
+        abs_path_to_this_file = sys.modules[cls.__module__].__file__
+        cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file)
+    
+
     @classmethod
     def setUpClass(cls):
         '''
         Locates student and key modules, compiling if necessary.
         Imports python modules, and runs basic tests on student modules.
         '''
-        abs_path_to_this_file = sys.modules[cls.__module__].__file__
-        cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file)
+        cls.set_this_dir_name()
 
         if cls.key_source_files is None:
             warnings.warn("key_source_files unspecified! Assuming no key program. \nInitialize this class attribute to an empty list to silence this warning.")
@@ -325,21 +355,27 @@ class VPLTestCase(unittest.TestCase):
     
 
     @classmethod
+    def find_student_files(cls):
+        # if override_THIS_DIR_NAME is not None:
+            # cls.THIS_DIR_NAME = override_THIS_DIR_NAME
+        return [ file for file in os.listdir(cls.THIS_DIR_NAME) 
+                if file not in cls.key_source_files 
+                    and file not in cls.ignore_files
+                    and file not in cls.VPL_SYSTEM_FILES
+                    and file != cls.THIS_FILE_NAME
+                    and not file.startswith("__")
+                    and not any(file.endswith(nee) for nee in cls.NON_EXECUTABLE_EXTENSIONS)
+                    and not any(file.endswith(ife) for ife in cls.ignore_extensions)]
+
+
+    @classmethod
     def compile_student_program(cls):
         '''
         Language-agnostic logic for finding an compiling student programs. 
         Returns a SupportedLanguageProgram object which can be used to 
         invoke the program.
         '''
-        student_source_files = [ 
-            file for file in os.listdir(cls.THIS_DIR_NAME) 
-            if file not in cls.key_source_files 
-                    and file not in cls.ignore_files
-                    and file not in cls.VPL_SYSTEM_FILES
-                    and file != cls.THIS_FILE_NAME
-                    and not file.startswith("__")
-        ]
-
+        student_source_files = cls.find_student_files()
         student_program = cls.detectLanguageAndMakeProgram(
             student_source_files, 
             cls.student_program_name, 
@@ -347,7 +383,7 @@ class VPLTestCase(unittest.TestCase):
         )
         student_program.compile(cls.THIS_DIR_NAME)
 
-        if student_program.language not in cls.permitted_student_languages.values():
+        if student_program.language not in cls.permitted_student_languages:
             raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {cls.permitted_student_languages}")
         
         return student_program
@@ -371,6 +407,26 @@ class VPLTestCase(unittest.TestCase):
     
 
     @classmethod
+    def unmask_hidden_files(cls, file_list: list[str]):
+        '''
+        To avoid encountering problems with VPL's standard compilation
+        behavior, we can't have multiple files with valid extensions 
+        containing main functions. Key files will be manually renamed
+        (when provided) with a second extension to mask the desired one.
+        This function removes all masking extensions, in place.
+        '''
+        for i in range(len(file_list)):
+            if file_list[i].endswith(cls.mask_extension):
+                new_name = file_list[i][:-len(cls.mask_extension)]
+                os.rename(
+                    os.path.join(cls.THIS_DIR_NAME, file_list[i]),
+                    os.path.join(cls.THIS_DIR_NAME, new_name)
+                )
+                cls.files_renamed.append((file_list[i] , new_name))
+                file_list[i] = new_name
+
+
+    @classmethod
     def detectLanguageAndMakeProgram(cls, file_list: list[str], executable_name: str, output_file_name: str) -> SupportedLanguageProgram:
         '''
         Searches file_list for items which have the extension of a supported programming language, 
@@ -380,20 +436,21 @@ class VPLTestCase(unittest.TestCase):
         if file_list == []:
             return 
 
-        current_program_lang = None
-        current_program_class = None
+        current_program_lang: SupportedLanguages = None
+        current_program_class: SupportedLanguageProgram = None
         source_files = []
+        cls.unmask_hidden_files(file_list)
         for file in file_list:
             for supported_lang, lang_program_class in OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE.items():
                 if current_program_lang is not None and current_program_lang != supported_lang:
                     continue # We're already found our language, and this is not it.
 
-                if current_program_lang is None and file.endswith(supported_lang.extension):
+                if current_program_lang is None and file.endswith(supported_lang.value.extension):
                     current_program_lang = supported_lang
                     current_program_class = lang_program_class
                     source_files.append(file)
 
-                elif current_program_lang is not None and file.endswith(current_program_lang.extension):
+                elif current_program_lang is not None and file.endswith(current_program_lang.value.extension):
                     source_files.append(file)
 
         # Call constructor for detected program class.
@@ -403,11 +460,21 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
+    def remask_hidden_files(cls):
+        for old_name, new_name in cls.files_renamed:
+            os.rename(
+                os.path.join(cls.THIS_DIR_NAME, new_name),
+                os.path.join(cls.THIS_DIR_NAME, old_name)
+            )
+
+
+    @classmethod
     def tearDownClass(cls):
         '''
         Find all names of unittest.TestCase test_* methods, and write them to 
         a file in the same directory as the subclass of this.
         '''
+
         test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
         vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
         vpltools.make_cases_file_from_list(
@@ -415,6 +482,7 @@ class VPLTestCase(unittest.TestCase):
             vpl_test_tuples,
             cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False
         )
+        cls.remask_hidden_files()
         return super().tearDownClass()
     
 

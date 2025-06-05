@@ -8,7 +8,7 @@ with open("README.md", "r") as fo:
     long_description = fo.read()
 
 setup(name='findmodules',
-      version='0.17',
+      version='0.18',
       description=('Facilitates Moodle VPL use by providing extensible subclasses '
                    +'of unittest.TestCase working directory for other python files.'),
       long_description=long_description,

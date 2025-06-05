@@ -11,6 +11,7 @@ from typing import Type
 from types import FunctionType
 from copy import copy
 from dataclasses import dataclass
+import contextlib
 
 import vpltools
 import vpltools.basic_tests
@@ -18,6 +19,9 @@ import vpltools.basic_tests
 # __unittest = True
 
 class NoProgramError(RuntimeError):
+    pass
+
+class UnsupportedFeatureError(RuntimeError):
     pass
 
 @dataclass
@@ -165,6 +169,12 @@ class JavaProgram(SupportedLanguageProgram):
     
 
     def compilationCommand(self):
+        for source_file in self.source_files:
+            with open(os.path.join(self.executable_dir, source_file), "r") as fp:
+                file_contents = fp.read()
+                if re.search("^\\s*package\\s*.*;", file_contents, flags=re.MULTILINE) is not None:
+                    raise UnsupportedFeatureError("Running Java packages is not supported by vpltools. Please remove the package statements.")
+
         return self.compilation_commands + self.source_files
 
 
@@ -198,7 +208,7 @@ class PythonProgram(SupportedLanguageProgram):
             if "main" in source_files:
                 exec_name = source_files.index("main")
             else:
-                raise ValueError("If you have more than 1 file, you must name one of them main.py!")
+                raise ValueError(f"If you have more than 1 file, you must name one of them main.py! Found {source_files}")
 
         return super().__init__(
             SupportedLanguages.Python, 
@@ -286,6 +296,8 @@ class VPLTestCase(unittest.TestCase):
     # skip_basic_tests = vpltools.BASIC_TESTS
     include_pylint = False
 
+    make_vpl_evaluate_cases_file = True
+
     mask_extension = ".save"
     files_renamed: list[tuple[str, str]] = [] # old name, new_name
 
@@ -325,7 +337,9 @@ class VPLTestCase(unittest.TestCase):
             "capture_output": True, 
             "text"          : True,
             # "timeout"       : 15,
-            "check"         : True, # Raise CalledProcessError on non-zero exit code.
+            # "check"         : True, # Raise CalledProcessError on non-zero exit code. 
+            # ^^ Removed, so that subclasses have error handling, reporting responsibility.
+            #    This package should not be noticed. As the penguins say; "You didn't see anything..."
         }
         # Add current directory to PATH, so we can find our compiled binaries.
         cls.subprocess_run_options["env"].update({ "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME }),
@@ -344,14 +358,23 @@ class VPLTestCase(unittest.TestCase):
     def import_as_py_module(cls, program: SupportedLanguageProgram, run_basic_tests: list[FunctionType] = []):
         '''
         Returns a module object if program is a Python program, None otherwise. 
-        Runs basic tests if flag is set.
+        None will also be returned if the import fails for any reason. This can happen 
+        if a Python script which expects arguments (which will not be suppplied during import).
+        Runs each of the basic tests suppplied.
         '''
-        if isinstance(program, PythonProgram):
-            module = importlib.import_module(os.path.splitext(program.executable_name)[0])
-            vpltools.run_basic_tests(module, run_basic_tests)
-            return module
+        if not isinstance(program, PythonProgram):
+            return None
         
-        return None
+        try:
+            with contextlib.redirect_stdout(os.devnull, "w"):
+                module = importlib.import_module(os.path.splitext(program.executable_name)[0])
+                # I don't want any output from student modules when importing.
+        except: # In ANY part of the import fails, then return None.
+            return None
+        
+        vpltools.run_basic_tests(module, run_basic_tests)
+        return module
+
     
 
     @classmethod
@@ -369,7 +392,7 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def compile_student_program(cls):
+    def compile_student_program(cls, recompile=False):
         '''
         Language-agnostic logic for finding an compiling student programs. 
         Returns a SupportedLanguageProgram object which can be used to 
@@ -379,18 +402,20 @@ class VPLTestCase(unittest.TestCase):
         student_program = cls.detectLanguageAndMakeProgram(
             student_source_files, 
             cls.student_program_name, 
-            cls.student_program_name
+            cls.student_program_name,
+            unmask_hidden_files=False
         )
-        student_program.compile(cls.THIS_DIR_NAME)
+        student_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
 
         if student_program.language not in cls.permitted_student_languages:
             raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {cls.permitted_student_languages}")
         
+        print("Stu program:", *student_program.source_files)
         return student_program
 
 
     @classmethod
-    def compile_key_program(cls):
+    def compile_key_program(cls, recompile=False):
         '''
         Language-agnostic logic for finding an compiling key programs. 
         Returns a SupportedLanguageProgram object which can be used to 
@@ -399,10 +424,12 @@ class VPLTestCase(unittest.TestCase):
         key_program = cls.detectLanguageAndMakeProgram(
             cls.key_source_files,
             cls.key_program_name,
-            cls.key_outfile_name
+            cls.key_outfile_name,
+            unmask_hidden_files=True
         )
         if key_program is not None:
-            key_program.compile(cls.THIS_DIR_NAME)
+            key_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
+            print("Key program:", *key_program.source_files)
             return key_program
     
 
@@ -427,7 +454,7 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def detectLanguageAndMakeProgram(cls, file_list: list[str], executable_name: str, output_file_name: str) -> SupportedLanguageProgram:
+    def detectLanguageAndMakeProgram(cls, file_list: list[str], executable_name: str, output_file_name: str, unmask_hidden_files: bool=False) -> SupportedLanguageProgram:
         '''
         Searches file_list for items which have the extension of a supported programming language, 
         using the first match found. Returns an object of the appropriate 
@@ -439,7 +466,10 @@ class VPLTestCase(unittest.TestCase):
         current_program_lang: SupportedLanguages = None
         current_program_class: SupportedLanguageProgram = None
         source_files = []
-        cls.unmask_hidden_files(file_list)
+        
+        if unmask_hidden_files:
+            cls.unmask_hidden_files(file_list)
+
         for file in file_list:
             for supported_lang, lang_program_class in OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE.items():
                 if current_program_lang is not None and current_program_lang != supported_lang:
@@ -456,6 +486,8 @@ class VPLTestCase(unittest.TestCase):
         # Call constructor for detected program class.
         if current_program_class is None:
             raise FileNotFoundError(f"No submission found, or couldn't infer programming language! Found files: {file_list}")
+        
+        executable_name += "_" + os.path.splitext(source_files[0])[0]
         return current_program_class(cls.THIS_DIR_NAME, executable_name, source_files, output_file_name)
 
 
@@ -474,14 +506,15 @@ class VPLTestCase(unittest.TestCase):
         Find all names of unittest.TestCase test_* methods, and write them to 
         a file in the same directory as the subclass of this.
         '''
+        if cls.make_vpl_evaluate_cases_file: 
+            test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
+            vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
+            vpltools.make_cases_file_from_list(
+                cls.THIS_DIR_NAME,
+                vpl_test_tuples,
+                cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False
+            )
 
-        test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
-        vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
-        vpltools.make_cases_file_from_list(
-            cls.THIS_DIR_NAME,
-            vpl_test_tuples,
-            cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False
-        )
         cls.remask_hidden_files()
         return super().tearDownClass()
     
@@ -514,29 +547,60 @@ class VPLTestCase(unittest.TestCase):
         return vpl_test_tuples
     
 
-    @classmethod
-    def run_student_program(cls, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
+    def run_student_program(self, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
         '''
         Execute the student's program in a subprocess, providing the given arguments, and 
         input string. Uses the environment of the calling VPLTestCase subclass.
         '''
-        if cls.student_program is None:
+        if self.student_program is None:
             raise NoProgramError("Student program not found!")
 
-        return cls.student_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
+        # A few things could go wrong here. You could be testing on multiple machines, and 
+        # and your Git repo contains an old executable which is not compatiable with the 
+        # current machine. This raises OSError, so recompile and try again.
+        # Another potential problem is that the program runs, but experiences some kind of 
+        # runtime error. This is not raised as an exception (see the subprocess_run_options)
+        # but it does mean that we should fail the current test, and log the error to stdout.
+        try:
+            student_process = self.student_program.run(cli_args, input=input_string, **self.subprocess_run_options, **more_subprocess_run_kwargs)
+        except OSError: # Existing executable, wrong architecture?
+            self.student_program.compile(self.THIS_DIR_NAME, recompile=True)
+            student_process = self.student_program.run(cli_args, input=input_string, **self.subprocess_run_options, **more_subprocess_run_kwargs)
+        
+        if student_process.returncode != 0:
+            self.fail(msg=(f"\n\nYOUR PROGRAM CRASHED WITH THE COMMAND:\n"
+                + f"> {' '.join(student_process.args)}\n\n"
+                + "Verify that the command above works offline.\n\n"
+                + f"ERROR MESSAGE FROM YOUR PROGRAM:\n"
+                + "> " + student_process.stderr.replace("\n", "\n> ")))
+
+        return student_process
     
-    
-    @classmethod
-    def run_key_program(cls, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
+
+    def run_key_program(self, cli_args: list[str], input_string: str, **more_subprocess_run_kwargs):
         '''
         Execute the key program in a subprocess, providing the given arguments, and 
         input string. Uses the environment of the calling VPLTestCase subclass.
         '''
-        if cls.key_program is None:
+        if self.key_program is None:
             raise NoProgramError("Key program not found!")
 
-        return cls.key_program.run(cli_args, input=input_string, **cls.subprocess_run_options, **more_subprocess_run_kwargs)
+        # A few things could go wrong here. See run_student_program for details.
+        try:
+            key_process = self.key_program.run(cli_args, input=input_string, **self.subprocess_run_options, **more_subprocess_run_kwargs)
+        except OSError: # Existing executable, wrong architecture?
+            self.key_program.compile(self.THIS_DIR_NAME, recompile=True)
+            key_process = self.key_program.run(cli_args, input=input_string, **self.subprocess_run_options, **more_subprocess_run_kwargs)
 
+        if key_process.returncode != 0:
+            self.fail(msg=(f"!!! THE KEY PROGRAM CRASHED WITH THE COMMAND:\n"
+                + f"> {key_process.args}\n"
+                + "!!! Send this error message in an email to your instructor.\n"
+                + "!!! You may be eligible to collect a bug bounty.\n\n"
+                + "ERROR MESSAGE FROM KEY PROGRAM:\n"
+                + "> " + key_process.stderr.replace("\n", "\n> ")))
+
+        return key_process
 
 if __name__ == "__main__":
     print("Are you lost? You look lost.")
