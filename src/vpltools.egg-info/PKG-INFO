@@ -1,6 +1,6 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: vpltools
-Version: 0.17
+Version: 0.18
 Summary: Facilitates Moodle VPL use by providing extensible subclasses of unittest.TestCase working directory for other python files.
 Author-email: William Bailey <william.bailey@centre.edu>
 Project-URL: Homepage, https://github.com/wba234/baileycs1
@@ -10,6 +10,7 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 License-File: LICENSE.txt
+Dynamic: license-file
 
 # About VPLTools
 VPLTools is a package for writing tests which work with the VPL Moodle plugin. Test code is--naturally--written in Python, but VPLTools enables end-to-end testing of programs written in other languages too.
@@ -197,7 +198,9 @@ In addition to ```VPLTestCase``` VPLTools also provides some classes which suppo
 There is a snippet for this boilerplate in ```/.vscode```. The format of the snippet (JSON) is a little specific to VSCode, but the code can be extracted relatively easily. Type ```test``` in a snakefile to trigger the snippet. 
 
 # To Do
-- Make Java pakages work?
+- Add instrumentation, so that submissions could be tracked and studied. You'll probably want a database for this, and to seek IRB approval before switching it on.
+- What would it take to add support for detecting LLM-generated code?
+- Make Java packages work?
 - Add more tests for this. 
 - Test this under Windows? VPLJail is a POSIX system, right? Do I need to worry about windows?
 - Add a method for writing student and key output files to memory mapped files, for speed.

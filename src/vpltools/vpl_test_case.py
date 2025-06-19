@@ -36,20 +36,28 @@ class SupportedLanguage(abc.ABC):
         return hash(self.name)
 
 
-@dataclass
+# @dataclass
 class SupportedLanguageProgram(abc.ABC):
     '''
     Represents a program written in one of the languages supported by this package.
     This is an abstract base class, which is not instantiated directly. It is intended
     to be extended into another class for each supported language.
     '''
-    language: SupportedLanguage
-    compilation_commands: list[str]
-    main_file_base_name: str
-    executable_dir: str
-    executable_name: str
-    source_files: list[str] = None
-    output_file_name: str = None
+    def __init__(self, 
+                 language: SupportedLanguage, 
+                 compilation_commands: list[str], 
+                 main_file_base_name: str, 
+                 executable_dir: str,
+                 executable_name: str,
+                 source_files: list[str],
+                 output_file_name: str) -> None:
+        self.language = language
+        self.compilation_commands = compilation_commands
+        self.main_file_base_name = main_file_base_name
+        self.executable_dir = executable_dir
+        self.executable_name = executable_name
+        self.source_files = source_files
+        self.output_file_name = output_file_name
 
 
     @abc.abstractmethod
@@ -112,7 +120,7 @@ class CProgram(SupportedLanguageProgram):
     '''
     def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
         return super().__init__(
-            SupportedLanguages.C, 
+            SupportedLanguages.C, # type: ignore
             [ "gcc", "-o", executable_name ] + source_files + ["-lm"], 
             "main", 
             executable_dir,
@@ -137,7 +145,7 @@ class CPPProgram(SupportedLanguageProgram):
     '''
     def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
         return super().__init__(
-            SupportedLanguages.CPP 
+            SupportedLanguages.CPP, # type: ignore
             [ "g++", "-o", executable_name] + source_files + ["-lm"], 
             "main", 
             executable_dir,
@@ -164,7 +172,7 @@ class JavaProgram(SupportedLanguageProgram):
         '''
         Note that executable_name
         '''
-        super().__init__(SupportedLanguages.Java, ["javac"], "main", executable_dir, executable_name, source_files, output_file_name)
+        super().__init__(SupportedLanguages.Java, ["javac"], "main", executable_dir, executable_name, source_files, output_file_name) # type: ignore
         self.find_main_and_set_exec_name()
     
 
@@ -188,7 +196,7 @@ class JavaProgram(SupportedLanguageProgram):
                 main_matches = re.findall(r"public\s+static\s+void\s+main", fo.read())
                 if main_matches:
                     self.executable_name = file.split(".")[0]
-                    return
+                    return self.executable_name
         raise NoProgramError("Java program has no (public static void) main function!")
 
 
@@ -200,24 +208,25 @@ class PythonProgram(SupportedLanguageProgram):
     '''
     PYTHON_COMMAND = "python3"
     def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
+        exec_name = ""
         if len(source_files) == 0:
             raise ValueError("No input files found!")
         elif len(source_files) == 1:
             exec_name = source_files[0]
         elif len(source_files) > 1:
             if "main" in source_files:
-                exec_name = source_files.index("main")
+                exec_name = source_files[source_files.index("main")]
             else:
                 raise ValueError(f"If you have more than 1 file, you must name one of them main.py! Found {source_files}")
 
         return super().__init__(
-            SupportedLanguages.Python, 
+            SupportedLanguages.Python, # type: ignore
             [],
             executable_dir,
             exec_name,
             source_files[0], 
             source_files, 
-            output_file_name=None)
+            output_file_name=None) # type: ignore
 
 
     def compilationCommand(self):
@@ -228,12 +237,39 @@ class PythonProgram(SupportedLanguageProgram):
         return subprocess.run([self.PYTHON_COMMAND, self.executable_name, *cli_args], input=input, **kwargs)
 
 
+
+class SQLQuery(SupportedLanguageProgram):
+    '''
+    Represents a SELECT query, written in SQL. Could be some other
+    statement which produces a result set.
+    '''
+    def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
+            super().__init__(
+                SupportedLanguages.SQL, # type: ignore
+                [],
+                "",
+                executable_dir,
+                executable_name,
+                source_files,
+                output_file_name
+            )
+
+
+    def compilationCommand(self):
+        return None
+    
+    
+    def run(self, cli_args, input="", **kwargs):
+        return None
+    
+    
+
 class SupportedLanguages(enum.Enum):
     C = SupportedLanguage("C", ".c")
     CPP = SupportedLanguage("C++", ".cpp")
     Java = SupportedLanguage("Java", ".java")
     Python = SupportedLanguage("Python", ".py")
-
+    SQL = SupportedLanguage("SQL", ".sql")
 
 # SUPPORTED_LANGUAGES = {
 #     "C"     : SupportedLanguages.C,
@@ -247,7 +283,8 @@ OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE: dict[SupportedLanguages, Type[Supported
     SupportedLanguages.C        :   CProgram,
     SupportedLanguages.CPP      :   CPPProgram,
     SupportedLanguages.Java     :   JavaProgram,
-    SupportedLanguages.Python   :  PythonProgram,
+    SupportedLanguages.Python   :   PythonProgram,
+    SupportedLanguages.SQL      :   SQLQuery
 }
 
 
@@ -288,8 +325,8 @@ class VPLTestCase(unittest.TestCase):
         ".svg",
     ]
 
-    key_source_files = None
-    ignore_files = []
+    key_source_files: list[str] | None = None   # type: ignore
+    ignore_files: list[str] = []
     ignore_extensions = []
     permitted_student_languages = list(SupportedLanguages)
     run_basic_tests = []
@@ -313,7 +350,7 @@ class VPLTestCase(unittest.TestCase):
     @classmethod
     def set_this_dir_name(cls):
         abs_path_to_this_file = sys.modules[cls.__module__].__file__
-        cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file)
+        cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file) # type: ignore
     
 
     @classmethod
@@ -326,7 +363,7 @@ class VPLTestCase(unittest.TestCase):
 
         if cls.key_source_files is None:
             warnings.warn("key_source_files unspecified! Assuming no key program. \nInitialize this class attribute to an empty list to silence this warning.")
-            cls.key_source_files = []
+            cls.key_source_files: list[str] = []
 
         cls.student_program = cls.compile_student_program()
         cls.key_program = cls.compile_key_program()
@@ -342,7 +379,7 @@ class VPLTestCase(unittest.TestCase):
             #    This package should not be noticed. As the penguins say; "You didn't see anything..."
         }
         # Add current directory to PATH, so we can find our compiled binaries.
-        cls.subprocess_run_options["env"].update({ "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME }),
+        cls.subprocess_run_options["env"].update({ "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME })
 
         # Add this as a class attribute, so others can find it; e.g. to use pexpect.spawn.
         cls.program_execution_env = cls.subprocess_run_options["env"]
@@ -355,18 +392,18 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def import_as_py_module(cls, program: SupportedLanguageProgram, run_basic_tests: list[FunctionType] = []):
+    def import_as_py_module(cls, program: SupportedLanguageProgram | None, run_basic_tests: list[FunctionType] = []):
         '''
         Returns a module object if program is a Python program, None otherwise. 
         None will also be returned if the import fails for any reason. This can happen 
-        if a Python script which expects arguments (which will not be suppplied during import).
-        Runs each of the basic tests suppplied.
+        if a Python script which expects arguments (which will not be supplied during import).
+        Runs each of the basic tests supplied.
         '''
         if not isinstance(program, PythonProgram):
             return None
         
         try:
-            with contextlib.redirect_stdout(os.devnull, "w"):
+            with contextlib.redirect_stdout(open(os.devnull, "w")):
                 module = importlib.import_module(os.path.splitext(program.executable_name)[0])
                 # I don't want any output from student modules when importing.
         except: # In ANY part of the import fails, then return None.
@@ -378,7 +415,7 @@ class VPLTestCase(unittest.TestCase):
     
 
     @classmethod
-    def find_student_files(cls):
+    def find_student_files(cls) -> list[str]:
         # if override_THIS_DIR_NAME is not None:
             # cls.THIS_DIR_NAME = override_THIS_DIR_NAME
         return [ file for file in os.listdir(cls.THIS_DIR_NAME) 
@@ -461,10 +498,10 @@ class VPLTestCase(unittest.TestCase):
         SupportedLanguageProgram subclass.
         '''
         if file_list == []:
-            return 
+            raise NoProgramError("Student program not found!")
 
-        current_program_lang: SupportedLanguages = None
-        current_program_class: SupportedLanguageProgram = None
+        current_program_lang: SupportedLanguages = None         # type: ignore
+        current_program_class: SupportedLanguageProgram = None  # type: ignore
         source_files = []
         
         if unmask_hidden_files:
@@ -488,7 +525,7 @@ class VPLTestCase(unittest.TestCase):
             raise FileNotFoundError(f"No submission found, or couldn't infer programming language! Found files: {file_list}")
         
         executable_name += "_" + os.path.splitext(source_files[0])[0]
-        return current_program_class(cls.THIS_DIR_NAME, executable_name, source_files, output_file_name)
+        return current_program_class(cls.THIS_DIR_NAME, executable_name, source_files, output_file_name) # type: ignore
 
 
     @classmethod
@@ -556,7 +593,7 @@ class VPLTestCase(unittest.TestCase):
             raise NoProgramError("Student program not found!")
 
         # A few things could go wrong here. You could be testing on multiple machines, and 
-        # and your Git repo contains an old executable which is not compatiable with the 
+        # and your Git repo contains an old executable which is not compatible with the 
         # current machine. This raises OSError, so recompile and try again.
         # Another potential problem is that the program runs, but experiences some kind of 
         # runtime error. This is not raised as an exception (see the subprocess_run_options)

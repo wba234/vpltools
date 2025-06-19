@@ -186,7 +186,7 @@ There is a snippet for this boilerplate in ```/.vscode```. The format of the sni
 # To Do
 - Add instrumentation, so that submissions could be tracked and studied. You'll probably want a database for this, and to seek IRB approval before switching it on.
 - What would it take to add support for detecting LLM-generated code?
-- Make Java pakages work?
+- Make Java packages work?
 - Add more tests for this. 
 - Test this under Windows? VPLJail is a POSIX system, right? Do I need to worry about windows?
 - Add a method for writing student and key output files to memory mapped files, for speed.
