@@ -14,9 +14,8 @@ from dataclasses import dataclass
 import contextlib
 
 import vpltools
-import vpltools.basic_tests
 
-# __unittest = True
+__unittest = True
 
 class NoProgramError(RuntimeError):
     pass
@@ -244,6 +243,9 @@ class SQLQuery(SupportedLanguageProgram):
     statement which produces a result set.
     '''
     def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
+            if len(source_files) != 1:
+                raise ValueError("Too many SQL files! Only one SQL file is supported. If you need extra files " 
+                                 + f"to populate a database, define a subclass of InMemoryDatabase. Found:\n {source_files}")
             super().__init__(
                 SupportedLanguages.SQL, # type: ignore
                 [],
@@ -259,7 +261,7 @@ class SQLQuery(SupportedLanguageProgram):
         return None
     
     
-    def run(self, cli_args, input="", **kwargs):
+    def run(self, cli_args, input="", **kwargs): # type: ignore
         return None
     
     
@@ -344,8 +346,8 @@ class VPLTestCase(unittest.TestCase):
     student_program_name = "student_program"
     student_outfile_name = "student_outfile"
 
-    student_program = None
-    key_program = None
+    student_program: SupportedLanguageProgram | None = None    # type: ignore
+    key_program: SupportedLanguageProgram | None = None        # type: ignore
 
     @classmethod
     def set_this_dir_name(cls):
@@ -402,13 +404,17 @@ class VPLTestCase(unittest.TestCase):
         if not isinstance(program, PythonProgram):
             return None
         
+        null_dev = open(os.devnull, "w")
         try:
-            with contextlib.redirect_stdout(open(os.devnull, "w")):
+            with contextlib.redirect_stdout(null_dev):
                 module = importlib.import_module(os.path.splitext(program.executable_name)[0])
                 # I don't want any output from student modules when importing.
         except: # In ANY part of the import fails, then return None.
+            null_dev.close()
             return None
         
+        null_dev.close()
+
         vpltools.run_basic_tests(module, run_basic_tests)
         return module
 
@@ -498,7 +504,7 @@ class VPLTestCase(unittest.TestCase):
         SupportedLanguageProgram subclass.
         '''
         if file_list == []:
-            raise NoProgramError("Student program not found!")
+            raise NoProgramError("Program not found!")
 
         current_program_lang: SupportedLanguages = None         # type: ignore
         current_program_class: SupportedLanguageProgram = None  # type: ignore
