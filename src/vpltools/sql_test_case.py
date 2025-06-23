@@ -166,6 +166,7 @@ class TestSQLSelectQuery(TestSQLQuery):
     that all the data in each column is the same.
     '''
     permit_select_all = True
+    permit_natural_join = True
 
     @staticmethod
     def inexplicablyNonstandardEquals(df1: pd.DataFrame, df2: pd.DataFrame) -> bool:
@@ -182,15 +183,30 @@ class TestSQLSelectQuery(TestSQLQuery):
         if self.permit_select_all:
             return
         
-        select_all_pattern = r"select\s+\*"
-        select_all_re = re.compile(select_all_pattern, re.IGNORECASE)
-        matches = select_all_re.findall(self.key_program_name)
+        matches = self.find_matches_in_file(r"select\s+\*")
+        if matches:
+            self.fail(
+                msg=("\n'SELECT *' is not allowed here. Make sure that it doesn't "
+                    +"appear anywhere in your submission file, even in comments. "))
 
-        self.assertListEqual(
-            matches,
-            [],
-            msg="\n'SELECT *' is not allowed here. Make sure that it doesn't appear anywhere in your submission file, even in comments. "
-        )
+
+    def testNoNaturalJoin(self):
+        if self.permit_natural_join:
+            return
+
+        matches = self.find_matches_in_file(r"natural\s+join")
+        if matches:
+            self.fail(
+                msg=f"\nNATURAL JOIN is not allowed here. Make sure that it doesn't " 
+                    + "appear anywhere in your submission file, even in comments.")
+
+
+    def find_matches_in_file(self, raw_pattern: str):
+        with open(os.path.join(self.THIS_DIR_NAME, self.student_program.source_files[0]), "r") as lab_fo: # type: ignore
+            lab_file_contents = lab_fo.read().lower()
+
+        select_all_re = re.compile(raw_pattern, re.IGNORECASE)
+        return select_all_re.findall(lab_file_contents)
 
 
     def compareQueries(self, key_file_name: str, lab_file_name: str, record_order_does_matter: bool = False) -> None:
@@ -218,7 +234,9 @@ class TestSQLSelectQuery(TestSQLQuery):
             key_df.shape, 
             lab_df.shape, 
             msg=f"Expected {key_df.shape[0]} rows, {key_df.shape[1]} columns, "
-              + f"received {lab_df.shape[0]} rows, {lab_df.shape[1]} columns.")
+              + f"received {lab_df.shape[0]} rows, {lab_df.shape[1]} columns.\n"
+              + "Expected:\n"
+              + str(key_df))
 
         # The columns might be out of order. Check by finding all shared columns.
         key_columns = set(key_df.columns)
