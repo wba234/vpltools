@@ -244,8 +244,7 @@ class SQLQuery(SupportedLanguageProgram):
     '''
     def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
             if len(source_files) != 1:
-                raise ValueError("Too many SQL files! Only one SQL file is supported. If you need extra files " 
-                                 + f"to populate a database, define a subclass of InMemoryDatabase. Found:\n {source_files}")
+                raise ValueError("Too many SQL files! Only one SQL file is supported. Found:\n {source_files}")
             super().__init__(
                 SupportedLanguages.SQL, # type: ignore
                 [],
@@ -330,7 +329,9 @@ class VPLTestCase(unittest.TestCase):
     key_source_files: list[str] | None = None   # type: ignore
     ignore_files: list[str] = []
     ignore_extensions = []
+    
     permitted_student_languages = list(SupportedLanguages)
+
     run_basic_tests = []
     # skip_basic_tests = vpltools.BASIC_TESTS
     include_pylint = False
@@ -346,8 +347,8 @@ class VPLTestCase(unittest.TestCase):
     student_program_name = "student_program"
     student_outfile_name = "student_outfile"
 
-    student_program: SupportedLanguageProgram | None = None    # type: ignore
-    key_program: SupportedLanguageProgram | None = None        # type: ignore
+    student_program: SupportedLanguageProgram
+    key_program: SupportedLanguageProgram | None = None
 
     @classmethod
     def set_this_dir_name(cls):
@@ -435,7 +436,7 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def compile_student_program(cls, recompile=False):
+    def compile_student_program(cls, recompile=False) -> SupportedLanguageProgram:
         '''
         Language-agnostic logic for finding an compiling student programs. 
         Returns a SupportedLanguageProgram object which can be used to 
@@ -451,14 +452,14 @@ class VPLTestCase(unittest.TestCase):
         student_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
 
         if student_program.language not in cls.permitted_student_languages:
-            raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {cls.permitted_student_languages}")
+            raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {", ".join(pl.name for pl in cls.permitted_student_languages)}")
         
         print("Stu program:", *student_program.source_files)
         return student_program
 
 
     @classmethod
-    def compile_key_program(cls, recompile=False):
+    def compile_key_program(cls, recompile=False) -> SupportedLanguageProgram | None:
         '''
         Language-agnostic logic for finding an compiling key programs. 
         Returns a SupportedLanguageProgram object which can be used to 
@@ -474,10 +475,10 @@ class VPLTestCase(unittest.TestCase):
             key_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
             print("Key program:", *key_program.source_files)
             return key_program
-    
+
 
     @classmethod
-    def unmask_hidden_files(cls, file_list: list[str]):
+    def unmask_hidden_files(cls, file_list: list[str]) -> None:
         '''
         To avoid encountering problems with VPL's standard compilation
         behavior, we can't have multiple files with valid extensions 
@@ -490,8 +491,7 @@ class VPLTestCase(unittest.TestCase):
                 new_name = file_list[i][:-len(cls.mask_extension)]
                 os.rename(
                     os.path.join(cls.THIS_DIR_NAME, file_list[i]),
-                    os.path.join(cls.THIS_DIR_NAME, new_name)
-                )
+                    os.path.join(cls.THIS_DIR_NAME, new_name))
                 cls.files_renamed.append((file_list[i] , new_name))
                 file_list[i] = new_name
 
@@ -563,7 +563,7 @@ class VPLTestCase(unittest.TestCase):
     
 
     @classmethod
-    def makeVPLTestTuples(cls, test_suite) -> list[tuple[str]]:
+    def makeVPLTestTuples(cls, test_suite: unittest.TestSuite) -> list[tuple[str, str, str]]:
         '''
         Walks the TestSuite hierarchy looking for TestCase objects.
         When found, adds a tuple containing:
