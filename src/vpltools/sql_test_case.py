@@ -131,13 +131,15 @@ class TestSQLQuery(vpltools.VPLTestCase):
     db_password : str
     # Greater abstraction may be required if multiple backends are to be supported, e.g.:
     # conn : mariadb.Connection = None
-
+    
     @classmethod
     def setUpClass(cls):
         '''
         Called before any test in the class is run. Sets the self.conn attribute to 
         a valid database connection, ready for queries to be submitted.
         '''
+        cls.permitted_student_languages = [ vpltools.SupportedLanguages.SQL ]
+        cls.ignore_files.append(cls.use_database)
         super().setUpClass()
         
         use_database_path = os.path.join(cls.THIS_DIR_NAME, cls.use_database)
@@ -155,7 +157,7 @@ class TestSQLQuery(vpltools.VPLTestCase):
             
         else:
             raise ValueError(f"RDBMS backend '{cls.backend}' is not supported. Choose between {list(SupportedSQLBackends)}.")
-
+        
 
 
 class TestSQLSelectQuery(TestSQLQuery):
