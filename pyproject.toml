@@ -2,7 +2,6 @@
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
-dependencies = ["mariadb>1.1.12"]
 
 [project]
 name = "vpltools"
@@ -13,6 +12,9 @@ authors = [
 description = "Facilitates Moodle VPL use by providing extensible subclasses of unittest.TestCase working directory for other python files."
 readme = "README.md"
 requires-python = ">=3.7"
+dependencies = [
+  "mariadb >=1.1.12",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

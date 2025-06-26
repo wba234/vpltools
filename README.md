@@ -205,6 +205,11 @@ To use this with Moodle VPLs, you will need to install this package into your Mo
 ### Installing in VPLJail
 You _should not_ install this in editable mode in the VPLJail. This will cause the package not to be found by the Python interpreter. Also, after installing anything into the VPLJail, you should restart the service with: ```systemctl restart vpl-jail-service```.
 
+### Before Installing
+This package requires the ```mariadb``` Python package. This means that there must be a functioning MariaDB installation, including the system packages ```libmariadb3``` ```libmariadb-dev```. So before installing ```vpltools```, run this command:
+```bash
+sudo apt install mariadb-server libmariadb3 libmariadb-dev
+```
 
 ## Build Process
 1. Navigate to top level directory.

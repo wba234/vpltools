@@ -12,4 +12,5 @@ src/vpltools/vpl_test_case.py
 src/vpltools.egg-info/PKG-INFO
 src/vpltools.egg-info/SOURCES.txt
 src/vpltools.egg-info/dependency_links.txt
+src/vpltools.egg-info/requires.txt
 src/vpltools.egg-info/top_level.txt
