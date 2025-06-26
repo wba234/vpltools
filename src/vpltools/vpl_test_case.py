@@ -244,7 +244,7 @@ class SQLQuery(SupportedLanguageProgram):
     '''
     def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
             if len(source_files) != 1:
-                raise ValueError("Too many SQL files! Only one SQL file is supported. Found:\n {source_files}")
+                raise ValueError(f"Too many SQL files! Only one SQL file is supported. Found:\n {source_files}")
             super().__init__(
                 SupportedLanguages.SQL, # type: ignore
                 [],
