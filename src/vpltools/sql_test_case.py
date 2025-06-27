@@ -89,6 +89,25 @@ class MariaDBPersistentDatabase(Database):
 
 
 
+class VPLDefaultDatabase(Database):
+    '''
+    An object representing VPL's default SQLite 3 database.
+    VPL executes all .sql files automatically by default, so arguments are unused.
+    '''
+    default_db = "vpl.db"   # default name from VPL's default script (sql_run.sh).
+    def __init__(self, test_file_dir: str):
+        if not os.path.exists(os.path.join(test_file_dir, self.default_db)):
+            raise FileNotFoundError # We're probably not running in the VPL jail
+
+        self.conn = sl.connect(self.default_db)
+        self.cursor = self.conn.cursor
+
+
+    def run_query(self, query: str) -> pd.DataFrame:
+        return super().run_query(query)
+    
+
+
 class InMemoryTestingDatabase(Database):
     '''
     An object representing an ephemeral SQLite 3 database.
@@ -121,7 +140,7 @@ class TestSQLQuery(vpltools.VPLTestCase):
     - use_database: str
     - backend: SupportedSQLBackends
     '''
-    use_database: str = ""
+    use_database: str = VPLDefaultDatabase.default_db
     backend: SupportedSQLBackends = SupportedSQLBackends.SQLite3
 
     conn : sl.Connection
@@ -148,8 +167,14 @@ class TestSQLQuery(vpltools.VPLTestCase):
             raise ValueError(f"Cannot execute query - no database specified! Define class attribute '{cls.__name__}.use_database'")
 
         if cls.backend == SupportedSQLBackends.SQLite3:
-            cls.db = InMemoryTestingDatabase(use_database_path)
-            cls.conn = cls.db.conn
+            try:
+                cls.db = VPLDefaultDatabase(cls.THIS_DIR_NAME)
+                cls.conn = cls.db.conn
+                print("Using VPL default database (vpl.db)")
+            except FileNotFoundError:
+                cls.db = InMemoryTestingDatabase(use_database_path)
+                cls.conn = cls.db.conn
+                print("Using in-memory database.")
 
         elif cls.backend == SupportedSQLBackends.MariaDB:
             cls.db = MariaDBPersistentDatabase(use_database_path, cls.db_user, cls.db_password, cls.db_name)
@@ -157,7 +182,40 @@ class TestSQLQuery(vpltools.VPLTestCase):
             
         else:
             raise ValueError(f"RDBMS backend '{cls.backend}' is not supported. Choose between {list(SupportedSQLBackends)}.")
+
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        if not cls.key_source_files:
+            print("No pre_vpl_run.sh needed.")
+            return
         
+        print("Writing pre_vpl_run...", end="")
+        bash_file_list = " ".join([ f'"{key_file}"' for key_file in cls.key_source_files ])
+        pre_run_sh_contents = (
+             f'for file in {bash_file_list}\n'
+            + 'do\n'
+            +f'if [ -f "$file" ]; then\n'
+            +f'    mv "$file" "$file{cls.mask_extension}"\n'
+            +f'    echo "$file moved."\n'
+            + 'fi\n'
+            + 'done\n')
+
+        pre_run_sh_path = os.path.join(cls.THIS_DIR_NAME, "pre_vpl_run.sh")
+        try:
+            with open(pre_run_sh_path, "r") as pre_run_fo:
+                old_pre_run_contents = pre_run_fo.read()
+        except FileNotFoundError:
+            old_pre_run_contents = None # If it doesn't exist, create it.
+        
+        if old_pre_run_contents != pre_run_sh_contents: # Compare to None is always False
+            with open(pre_run_sh_path, "w") as pre_run_fo:
+                pre_run_fo.write(pre_run_sh_contents)
+        else:
+            print("no changes...", end="")
+        print("done.")
+
 
 
 class TestSQLSelectQuery(TestSQLQuery):
@@ -225,8 +283,12 @@ class TestSQLSelectQuery(TestSQLQuery):
         lab_file_path = os.path.join(self.THIS_DIR_NAME, lab_file_name)
 
         # Read the contents of files which contain queries.
-        with open(key_file_path, 'r') as key_fo:
-            key_df = self.db.run_query(key_fo.read())
+        try:
+            with open(key_file_path, 'r') as key_fo:
+                key_df = self.db.run_query(key_fo.read())
+        except FileNotFoundError: # File may have been masked
+            with open(key_file_path+self.mask_extension, 'r') as key_fo:
+                key_df = self.db.run_query(key_fo.read())
 
         with open(lab_file_path, 'r') as lab_fo:
             lab_df = self.db.run_query(lab_fo.read())
