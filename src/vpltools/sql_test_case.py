@@ -198,7 +198,8 @@ class TestSQLQuery(vpltools.VPLTestCase):
             + 'do\n'
             +f'if [ -f "$file" ]; then\n'
             +f'    mv "$file" "$file{cls.mask_extension}"\n'
-            +f'    echo "$file moved."\n'
+            # +f'    echo "$file moved."\n'
+            + '    echo "Success."\n'
             + 'fi\n'
             + 'done\n')
 
