@@ -355,6 +355,25 @@ class TestSQLSelectQuery(TestSQLQuery):
 
         self.fail(f"Queries did not produce the same data sets!\nExpected:\n{key_df}\n\nGot:\n{lab_df}")
 
+    
+    def assertQueryOutputsEqual(self, key_source_file: str = ""):
+        '''
+        Executes the student-submitted query, and the query in the first key_source file,
+        raising AssertionError if they are not identical. 
+        Only the first element of self.key_source_files is used, or the specified key_source_file.
+        Only one student source file is supported; if more than one is provided, there is 
+        no guarantee which one will be used.
+        '''
+        db_err = None
+        use_key_file = key_source_file if key_source_file else self.key_source_files[0]
+        try:
+            self.compareQueries(use_key_file, self.student_program.source_files[0])
+        except pd.errors.DatabaseError as de:
+            db_err = str(de)
+
+        # Failing a test within an except complicates the traceback.
+        if db_err:
+            self.fail(msg=db_err)
 
 
 if __name__ == "__main__":
