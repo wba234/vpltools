@@ -47,6 +47,7 @@ class VPLTestCase(unittest.TestCase):
         "common_script.sh",
         "vpl_environment.sh",
         "vpl_compilation_error.txt",
+        "pre_vpl_run.sh",
     ]
 
     NON_EXECUTABLE_EXTENSIONS = [
@@ -54,6 +55,7 @@ class VPLTestCase(unittest.TestCase):
         ".jpeg",
         ".jpg",
         ".svg",
+        ".db"
     ]
 
     key_source_files: list[str] | None = None   # type: ignore
