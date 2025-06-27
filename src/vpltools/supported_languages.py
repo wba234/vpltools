@@ -6,6 +6,8 @@ import subprocess
 
 from typing import Type
 
+__unittest = True
+
 class NoProgramError(RuntimeError):
     pass
 
