@@ -8,6 +8,7 @@ src/vpltools/make_vpl_evaluate_cases.py
 src/vpltools/regextest.py
 src/vpltools/setup.py
 src/vpltools/sql_test_case.py
+src/vpltools/supported_languages.py
 src/vpltools/vpl_test_case.py
 src/vpltools.egg-info/PKG-INFO
 src/vpltools.egg-info/SOURCES.txt
