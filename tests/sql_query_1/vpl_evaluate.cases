@@ -1,0 +1,21 @@
+Case = testNoNaturalJoin
+program to run = /usr/bin/python3
+program arguments = -m unittest test_all_owners.TestOwnerNames.testNoNaturalJoin
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = testNoSelectAll
+program to run = /usr/bin/python3
+program arguments = -m unittest test_all_owners.TestOwnerNames.testNoSelectAll
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = testSelectAllOwners
+program to run = /usr/bin/python3
+program arguments = -m unittest test_all_owners.TestOwnerNames.testSelectAllOwners
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
