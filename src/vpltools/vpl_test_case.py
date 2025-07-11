@@ -197,6 +197,9 @@ class VPLTestCase(unittest.TestCase):
         Returns a SupportedLanguageProgram object which can be used to 
         invoke the program.
         '''
+        if cls.key_source_files == []:
+            return None
+        
         key_program = cls.detectLanguageAndMakeProgram(
             cls.key_source_files,
             cls.key_program_name,
