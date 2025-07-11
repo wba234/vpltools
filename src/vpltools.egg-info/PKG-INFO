@@ -202,16 +202,17 @@ In addition to ```VPLTestCase``` VPLTools also provides some classes which suppo
 There is a snippet for this boilerplate in ```/.vscode```. The format of the snippet (JSON) is a little specific to VSCode, but the code can be extracted relatively easily. Type ```test``` in a snakefile to trigger the snippet. 
 
 # To Do
-- Add instrumentation, so that submissions could be tracked and studied. You'll probably want a database for this, and to seek IRB approval before switching it on.
-- What would it take to add support for detecting LLM-generated code?
-- Make Java packages work?
-- Add more tests for this. 
+- Add more tests for this. How Do I run tests?
+- Add snippets for SQL tests.
+- Add snippets for other language End-to-end tests.
+- Add snippets for regex tests.
 - Test this under Windows? VPLJail is a POSIX system, right? Do I need to worry about windows?
+- Add instrumentation, so that submissions could be tracked and studied. You'll probably want a database for this, and to seek IRB approval before switching it on.
+- What would it take to add support for detecting AI-generated code?
+- Make Java packages work?
+- Publish this to PPI?
 - Add a method for writing student and key output files to memory mapped files, for speed.
 - Add a method for writing each test output file from the key program to a separate file, so that they can be cached, for speed.
-- Add other basic tests?
-- publish this to PPI?
-- Using Key Output Files instead of Re-running Key program each time. This can speed up submission processing. See the ```VPLTestCase.use_pre_computed_key```.
 
 ## Installation
 To use this with Moodle VPLs, you will need to install this package into your Moodle VPLJail manually. At time of writing, ```vpltools``` is _not_ in the Python Package Index. To install manually:
