@@ -1,0 +1,287 @@
+Case = test_FATAL_EXCEPTION
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_FATAL_EXCEPTION
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_a_guuh_if
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_a_guuh_if
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_a_jay_peg
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_a_jay_peg
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_a_pee_n_gee
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_a_pee_n_gee
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_a_temp_file
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_a_temp_file
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_angry_birds
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_angry_birds
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_another_simple_email
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_another_simple_email
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_bash_profile
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_bash_profile
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_comma_separator
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_comma_separator
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_div_span
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_div_span
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_dot_com
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_dot_com
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_dot_com_with_port
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_dot_com_with_port
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_dotted_email
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_dotted_email
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_exponential_notation
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_exponential_notation
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_find_a_div
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_find_a_div
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_ftp_server
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_ftp_server
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_ignore_resolution
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_ignore_resolution
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_integers
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_integers
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_just_numbers
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_just_numbers
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_just_spaces_with_country_code
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_just_spaces_with_country_code
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_leading
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_leading
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_localhost
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_localhost
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_lockfile
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_lockfile
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_more_plus_addressing
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_more_plus_addressing
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_more_with_hyphens
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_more_with_hyphens
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_multi_domain_email
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_multi_domain_email
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_negative
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_negative
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_noleading
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_noleading
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_not_so_simple_link
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_not_so_simple_link
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_plus_addressing
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_plus_addressing
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_simple
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_simple
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_simple_email
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_simple_email
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_simple_link
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_simple_link
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_string_misbehavin
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_string_misbehavin
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_the_documentation
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_the_documentation
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_warning
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_warning
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_with_hyphens
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_with_hyphens
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_with_parentheses
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_with_parentheses
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_with_spaces
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_with_spaces
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_workspace
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_workspace
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+
+Case = test_yet_another_simple_email
+program to run = /usr/bin/python3
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_yet_another_simple_email
+expected exit code = 0
+output = /.*OK/i
+grade reduction = 100%
+

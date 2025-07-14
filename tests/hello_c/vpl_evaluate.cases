@@ -1,6 +1,6 @@
-Case = test_function_name
+Case = test_hello_c
 program to run = /usr/bin/python3
-program arguments = -m unittest test_hello_C.TestHello.test_function_name
+program arguments = -m unittest test_hello_C.TestHelloC.test_hello_c
 expected exit code = 0
 output = /.*OK/i
 grade reduction = 100%

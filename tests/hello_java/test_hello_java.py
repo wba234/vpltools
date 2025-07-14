@@ -3,14 +3,14 @@ import vpltools
 
 __unittest = True
 
-class test_class_name(vpltools.VPLTestCase):
+class TestHelloJava(vpltools.VPLTestCase):
     '''
     Tests compilation of a basic Java program.
     '''
     key_source_files = []
     ignore_files = []
 
-    def test_function_name(self):
+    def test_hello_java(self):
         '''
         Tests if the program prints hello world.
         '''

@@ -3,14 +3,14 @@ import vpltools
 
 __unittest = True
 
-class TestHello(vpltools.VPLTestCase):
+class TestHelloC(vpltools.VPLTestCase):
     '''
     Tests compilation of a basic C program.
     '''
     key_source_files = []
     ignore_files = []
 
-    def test_function_name(self):
+    def test_hello_c(self):
         '''
         Tests if the program prints hello world.
         '''

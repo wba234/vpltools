@@ -191,7 +191,7 @@ class TestSQLQuery(vpltools.VPLTestCase):
             print("No pre_vpl_run.sh needed.")
             return
         
-        print("Writing pre_vpl_run...", end="")
+        print("Writing pre_vpl_run.sh...", end="")
         bash_file_list = " ".join([ f'"{key_file}"' for key_file in cls.key_source_files ])
         pre_run_sh_contents = (
              f'for file in {bash_file_list}\n'
