@@ -185,9 +185,7 @@ In addition to ```VPLTestCase``` VPLTools also provides some classes which suppo
 There is a snippet for this boilerplate in ```/.vscode```. The format of the snippet (JSON) is a little specific to VSCode, but the code can be extracted relatively easily. Type ```test``` in a snakefile to trigger the snippet. 
 
 # To Do
-- Add more tests for this.
-    - Regular Expressions
-
+- When running individual tests, e.g., ```tests/regular_expressions```, things are fine. When running all tests at once, things go wrong.
 - Add snippets for SQL tests.
 - Add snippets for other language End-to-end tests.
 - Add snippets for regex tests.

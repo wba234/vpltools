@@ -7,7 +7,7 @@ import warnings
 import importlib
 import re
 import enum
-
+import pdb
 from types import FunctionType
 from copy import copy
 from dataclasses import dataclass
@@ -94,6 +94,13 @@ class VPLTestCase(unittest.TestCase):
         Locates student and key modules, compiling if necessary.
         Imports python modules, and runs basic tests on student modules.
         '''
+        pdb.set_trace() # TODO Debug This:
+        # The tests for brute force knapsack and greedy knapsack are not completely isolated.
+        # Example: when tearDownClass was called in the greedy knapsack tests, the list of files 
+        # which had been renamed during the C program preparation was still available. This shouldn't 
+        # be the case, almost as if the list had been stored in a scope shared by the brute force and 
+        # greedy knapsack's shared base class (i.e., vpltools.VPLTestCase). Poke around using 
+        # the pdb.set_trace above to figure out what is happening.
         cls.set_this_dir_name()
 
         if cls.key_source_files is None:
@@ -120,9 +127,11 @@ class VPLTestCase(unittest.TestCase):
         cls.program_execution_env = cls.subprocess_run_options["env"]
 
         # If the student program is a Python program, import it as a module.
+        # pdb.set_trace()
         cls.student_py_module = cls.import_as_py_module(cls.student_program, cls.run_basic_tests)
         cls.key_py_module = cls.import_as_py_module(cls.key_program)
 
+        # print("\nid(cls) =", id(cls), "\n")
         return super().setUpClass()
 
 
@@ -137,18 +146,35 @@ class VPLTestCase(unittest.TestCase):
         if not isinstance(program, PythonProgram):
             return None
         
+        # Pipe any output received during import of student file into the null device.
         null_dev = open(os.devnull, "w")
-        try:
-            with contextlib.redirect_stdout(null_dev):
-                module = importlib.import_module(os.path.splitext(program.executable_name)[0])
-                # I don't want any output from student modules when importing.
-        except: # In ANY part of the import fails, then return None.
-            null_dev.close()
-            return None
-        
-        null_dev.close()
 
+        # When importing the 
+        student_file_name = os.path.splitext(program.executable_name)[0]
+
+        cwd_parts = os.getcwd().split(os.sep)
+        module_path_parts = cls.THIS_DIR_NAME.split(os.sep)
+
+        while len(cwd_parts) > 0 and len(module_path_parts) > 0 and cwd_parts[0] == module_path_parts[0]:
+            del cwd_parts[0]
+            del module_path_parts[0]
+        
+        module_path_parts.append(student_file_name)
+
+        with contextlib.redirect_stdout(null_dev): # I don't want any output from student modules when importing.
+            try:
+                module = importlib.import_module(".".join(module_path_parts))
+            except ModuleNotFoundError:
+                module = importlib.import_module(module_path_parts[-1])
+            except: # In ANY part of the import fails, then return None.
+                null_dev.close()
+                return None
+
+        null_dev.close()
+        cls.student_program_name = student_file_name # change default name if we're in Python # TODO MOVE ME TO program creation logic
+        
         run_basic_tests(module, tests_to_run)
+
         return module
 
     
@@ -271,11 +297,15 @@ class VPLTestCase(unittest.TestCase):
 
     @classmethod
     def remask_hidden_files(cls):
-        for old_name, new_name in cls.files_renamed:
-            os.rename(
-                os.path.join(cls.THIS_DIR_NAME, new_name),
-                os.path.join(cls.THIS_DIR_NAME, old_name)
-            )
+        while cls.files_renamed:
+            old_name, new_name = cls.files_renamed.pop()
+            try:
+                os.rename(
+                    os.path.join(cls.THIS_DIR_NAME, new_name),
+                    os.path.join(cls.THIS_DIR_NAME, old_name)
+                )
+            except FileNotFoundError:
+                pdb.set_trace()
 
 
     @classmethod
