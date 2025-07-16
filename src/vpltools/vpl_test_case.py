@@ -1,16 +1,9 @@
-import abc
 import sys
 import unittest
-import subprocess
-import os.path
 import warnings
 import importlib
-import re
-import enum
-import pdb
 from types import FunctionType
 from copy import copy
-from dataclasses import dataclass
 import contextlib
 
 from vpltools.supported_languages import *
@@ -38,6 +31,16 @@ class VPLTestCase(unittest.TestCase):
         - include_pylint    : (Python submissions only) boolean flag indicating if a
                               Pylint case should be added to vpl_evaluate.cases.
     '''
+    # NOTE: This class includes several mutable (e.g., list) class attributes.
+    # Subclasses are meant to override the default values as needed. When subclasses
+    # do not override the default values, they use precisely the objects defined here.
+    # I.e., if neither of two subclasses A and B override an a mutable attribute, and 
+    # and of A, B, or the parent class changes that attribute, it changes for all of 
+    # them. I haven't found a tidy, scalable way of changing this behavior. 
+    #
+    # TL;DR: Don't change any of the mutable class attributes here, that can cause 
+    # unexpected sharing of state
+
     VPL_SYSTEM_FILES = [ 
         "vpl_test",
         ".vpl_tester",
@@ -65,14 +68,13 @@ class VPLTestCase(unittest.TestCase):
     permitted_student_languages = list(SupportedLanguages)
 
     run_basic_tests = []
-    # skip_basic_tests = vpltools.BASIC_TESTS
+
     include_pylint = False
 
     make_vpl_evaluate_cases_file = True
 
     mask_extension = ".save"
-    files_renamed: list[tuple[str, str]] = [] # old name, new_name
-
+    
     key_program_name = "key_program"
     key_outfile_name = "key_outfile"
 
@@ -94,19 +96,13 @@ class VPLTestCase(unittest.TestCase):
         Locates student and key modules, compiling if necessary.
         Imports python modules, and runs basic tests on student modules.
         '''
-        pdb.set_trace() # TODO Debug This:
-        # The tests for brute force knapsack and greedy knapsack are not completely isolated.
-        # Example: when tearDownClass was called in the greedy knapsack tests, the list of files 
-        # which had been renamed during the C program preparation was still available. This shouldn't 
-        # be the case, almost as if the list had been stored in a scope shared by the brute force and 
-        # greedy knapsack's shared base class (i.e., vpltools.VPLTestCase). Poke around using 
-        # the pdb.set_trace above to figure out what is happening.
         cls.set_this_dir_name()
 
         if cls.key_source_files is None:
             warnings.warn("key_source_files unspecified! Assuming no key program. \nInitialize this class attribute to an empty list to silence this warning.")
             cls.key_source_files: list[str] = []
 
+        cls.files_renamed = [] # mutable class attributes to be modified need to be set here, not directly in class scope.
         cls.student_program = cls.compile_student_program()
         cls.key_program = cls.compile_key_program()
 
@@ -127,11 +123,9 @@ class VPLTestCase(unittest.TestCase):
         cls.program_execution_env = cls.subprocess_run_options["env"]
 
         # If the student program is a Python program, import it as a module.
-        # pdb.set_trace()
         cls.student_py_module = cls.import_as_py_module(cls.student_program, cls.run_basic_tests)
         cls.key_py_module = cls.import_as_py_module(cls.key_program)
 
-        # print("\nid(cls) =", id(cls), "\n")
         return super().setUpClass()
 
 
@@ -299,13 +293,10 @@ class VPLTestCase(unittest.TestCase):
     def remask_hidden_files(cls):
         while cls.files_renamed:
             old_name, new_name = cls.files_renamed.pop()
-            try:
-                os.rename(
-                    os.path.join(cls.THIS_DIR_NAME, new_name),
-                    os.path.join(cls.THIS_DIR_NAME, old_name)
-                )
-            except FileNotFoundError:
-                pdb.set_trace()
+            os.rename(
+                os.path.join(cls.THIS_DIR_NAME, new_name),
+                os.path.join(cls.THIS_DIR_NAME, old_name)
+            )
 
 
     @classmethod

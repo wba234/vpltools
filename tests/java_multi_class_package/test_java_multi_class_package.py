@@ -1,3 +1,8 @@
+'''
+NOTE: This is not a good test. It doesn't confirm that a Java package is present,
+it simply fails to produce an executable, and says FileNotFound. That's not exactly 
+the desired behavior, which would be to inform the user that packages are not supported.
+'''
 import unittest
 import vpltools
 import warnings
@@ -21,8 +26,8 @@ class test_multi_class_java_package(vpltools.VPLTestCase):
 
     @classmethod
     def setUpClass(cls):
-        pass # Override the class setup, so that we can call this manually later. 
-    
+        cls.files_renamed = [] # Overriding this means that certain mutable class attributes
+        # are not defined. Define them (it) here to avoid errors.
     
     @unittest.expectedFailure
     def test_dogstacker_package_compilation(self):
