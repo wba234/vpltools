@@ -25,11 +25,11 @@ class HistorySearcher(VPLTestCase):
     @classmethod
     def setUpClass(cls):
         cls.set_this_dir_name()
+        cls.student_program = None
+        cls.files_renamed = []
 
 
     def test_each_command_in_history(self):
-        # pass
-
         student_history_files = self.find_student_files()
         if len(student_history_files) != 1:
             raise RuntimeError("Must have exactly one history file. "
