@@ -3,7 +3,7 @@ import unittest
 import warnings
 import importlib
 from types import FunctionType
-from copy import copy
+from copy import deepcopy
 import contextlib
 
 from vpltools.supported_languages import *
@@ -108,7 +108,7 @@ class VPLTestCase(unittest.TestCase):
 
         cls.subprocess_run_options = {
             "cwd"           : cls.THIS_DIR_NAME, # Needed for programs to write their output files to the right place.
-            "env"           : copy(os.environ),
+            "env"           : deepcopy(os.environ), # Shallow copy = env changes persist to next TestCase class.
             "capture_output": True, 
             "text"          : True,
             # "timeout"       : 15,
