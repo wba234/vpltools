@@ -5,7 +5,6 @@ import importlib
 from types import FunctionType
 from copy import deepcopy
 import contextlib
-
 from vpltools.supported_languages import *
 from vpltools.basic_tests import run_basic_tests
 from vpltools.make_vpl_evaluate_cases import make_cases_file_from_list
