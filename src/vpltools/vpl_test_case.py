@@ -1,255 +1,15 @@
-import abc
 import sys
 import unittest
-import subprocess
-import os.path
 import warnings
 import importlib
-import re
-import enum
-from typing import Type
 from types import FunctionType
-from copy import copy
-from dataclasses import dataclass
+from copy import deepcopy
 import contextlib
+from vpltools.supported_languages import *
+from vpltools.basic_tests import run_basic_tests
+from vpltools.make_vpl_evaluate_cases import make_cases_file_from_list
 
-import vpltools
-import vpltools.basic_tests
-
-# __unittest = True
-
-class NoProgramError(RuntimeError):
-    pass
-
-class UnsupportedFeatureError(RuntimeError):
-    pass
-
-@dataclass
-class SupportedLanguage(abc.ABC):
-    name: str
-    extension: str
-
-    def __hash__(self):
-        '''
-        Provided to that this can be used as the key in a dictionary.
-        '''
-        return hash(self.name)
-
-
-@dataclass
-class SupportedLanguageProgram(abc.ABC):
-    '''
-    Represents a program written in one of the languages supported by this package.
-    This is an abstract base class, which is not instantiated directly. It is intended
-    to be extended into another class for each supported language.
-    '''
-    language: SupportedLanguage
-    compilation_commands: list[str]
-    main_file_base_name: str
-    executable_dir: str
-    executable_name: str
-    source_files: list[str] = None
-    output_file_name: str = None
-
-
-    @abc.abstractmethod
-    def compilationCommand(self):
-        '''
-        Abstract method to ensure individual languages implement their respective 
-        compilation commands. These should raise RunTimeError if compilation fails.
-        '''
-        raise NotImplementedError
-
-
-    def compile(self, use_dir, recompile=False):
-        '''
-        Compile the program represented by the calling object. If the target program
-        already exists, compilation is skipped, unless the recompile flag is set.
-        '''
-        if os.path.exists(os.path.join(self.executable_dir, self.executable_name)) and not recompile:
-            return
-        
-        command = self.compilationCommand()
-
-        # Interpreted languages don't need compilation
-        if command is None:
-            return
-        
-        # Try the supplied compilation command
-        compilation_process = subprocess.run(
-            command,
-            cwd=use_dir
-        )
-        # If that fails, try make
-        if compilation_process.returncode:
-            compilation_process = subprocess.run(
-                ["make"],
-                cwd=use_dir
-            )
-        # If that fails, give up.
-        if compilation_process.returncode:
-            raise RuntimeError(
-                f"Compilation failed!\n"
-                + f"command={command}\n"
-                + f"stdout={compilation_process.stdout}\n"
-                + f"stderr={compilation_process.stderr}\n"
-            )
-
-
-    @abc.abstractmethod
-    def run(self, cli_args: list[str], input="", **kwargs) -> subprocess.CompletedProcess:
-        '''
-        Executes the program represented by the calling object in a subprocess.
-        '''
-        raise NotImplementedError
-        
-
-
-class CProgram(SupportedLanguageProgram):
-    '''
-    Represents a program written in C, 
-    e.g., a student's submission, or an instructor's key program.
-    '''
-    def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
-        return super().__init__(
-            SupportedLanguages.C, 
-            [ "gcc", "-o", executable_name ] + source_files + ["-lm"], 
-            "main", 
-            executable_dir,
-            executable_name,
-            source_files, 
-            output_file_name)
-
-
-    def compilationCommand(self):
-        return self.compilation_commands
-    
-
-    def run(self, cli_args, input="", **kwargs):
-        return subprocess.run([self.executable_name, *cli_args], input=input, **kwargs)
-
-    
-
-class CPPProgram(SupportedLanguageProgram):
-    '''
-    Represents a program written in C++, 
-    e.g., a student's submission, or an instructor's key program.
-    '''
-    def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
-        return super().__init__(
-            SupportedLanguages.CPP 
-            [ "g++", "-o", executable_name] + source_files + ["-lm"], 
-            "main", 
-            executable_dir,
-            executable_name,
-            source_files, 
-            output_file_name)
-
-
-    def compilationCommand(self):
-        return self.compilation_commands
-    
-
-    def run(self, cli_args, input="", **kwargs):
-        return subprocess.run([self.executable_name, *cli_args], input=input, **kwargs)
-    
-
-
-class JavaProgram(SupportedLanguageProgram):
-    '''
-    Represents a program written in Java, 
-    e.g., a student's submission, or an instructor's key program.
-    '''
-    def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
-        '''
-        Note that executable_name
-        '''
-        super().__init__(SupportedLanguages.Java, ["javac"], "main", executable_dir, executable_name, source_files, output_file_name)
-        self.find_main_and_set_exec_name()
-    
-
-    def compilationCommand(self):
-        for source_file in self.source_files:
-            with open(os.path.join(self.executable_dir, source_file), "r") as fp:
-                file_contents = fp.read()
-                if re.search("^\\s*package\\s*.*;", file_contents, flags=re.MULTILINE) is not None:
-                    raise UnsupportedFeatureError("Running Java packages is not supported by vpltools. Please remove the package statements.")
-
-        return self.compilation_commands + self.source_files
-
-
-    def run(self, cli_args, input="", **kwargs):
-        return subprocess.run(["java", self.executable_name, *cli_args], input=input, **kwargs)
-    
-
-    def find_main_and_set_exec_name(self) -> str:
-        for file in self.source_files:
-            with open(os.path.join(self.executable_dir, file), "r") as fo:
-                main_matches = re.findall(r"public\s+static\s+void\s+main", fo.read())
-                if main_matches:
-                    self.executable_name = file.split(".")[0]
-                    return
-        raise NoProgramError("Java program has no (public static void) main function!")
-
-
-
-class PythonProgram(SupportedLanguageProgram):
-    '''
-    Represents a program written in Python,
-    e.g., a student's submission, or an instructor's key program.
-    '''
-    PYTHON_COMMAND = "python3"
-    def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
-        if len(source_files) == 0:
-            raise ValueError("No input files found!")
-        elif len(source_files) == 1:
-            exec_name = source_files[0]
-        elif len(source_files) > 1:
-            if "main" in source_files:
-                exec_name = source_files.index("main")
-            else:
-                raise ValueError(f"If you have more than 1 file, you must name one of them main.py! Found {source_files}")
-
-        return super().__init__(
-            SupportedLanguages.Python, 
-            [],
-            executable_dir,
-            exec_name,
-            source_files[0], 
-            source_files, 
-            output_file_name=None)
-
-
-    def compilationCommand(self):
-        return None
-    
-
-    def run(self, cli_args, input="", **kwargs):
-        return subprocess.run([self.PYTHON_COMMAND, self.executable_name, *cli_args], input=input, **kwargs)
-
-
-class SupportedLanguages(enum.Enum):
-    C = SupportedLanguage("C", ".c")
-    CPP = SupportedLanguage("C++", ".cpp")
-    Java = SupportedLanguage("Java", ".java")
-    Python = SupportedLanguage("Python", ".py")
-
-
-# SUPPORTED_LANGUAGES = {
-#     "C"     : SupportedLanguages.C,
-#     "CPP"   : SupportedLanguages.CPP,
-#     "JAVA"  : SupportedLanguages.Java,
-#     "PYTHON": SupportedLanguages.Python
-# }
-
-
-OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE: dict[SupportedLanguages, Type[SupportedLanguageProgram]] = {
-    SupportedLanguages.C        :   CProgram,
-    SupportedLanguages.CPP      :   CPPProgram,
-    SupportedLanguages.Java     :   JavaProgram,
-    SupportedLanguages.Python   :  PythonProgram,
-}
-
+__unittest = True
 
 class VPLTestCase(unittest.TestCase):
     '''
@@ -270,6 +30,16 @@ class VPLTestCase(unittest.TestCase):
         - include_pylint    : (Python submissions only) boolean flag indicating if a
                               Pylint case should be added to vpl_evaluate.cases.
     '''
+    # NOTE: This class includes several mutable (e.g., list) class attributes.
+    # Subclasses are meant to override the default values as needed. When subclasses
+    # do not override the default values, they use precisely the objects defined here.
+    # I.e., if neither of two subclasses A and B override an a mutable attribute, and 
+    # and of A, B, or the parent class changes that attribute, it changes for all of 
+    # them. I haven't found a tidy, scalable way of changing this behavior. 
+    #
+    # TL;DR: Don't change any of the mutable class attributes here, that can cause 
+    # unexpected sharing of state
+
     VPL_SYSTEM_FILES = [ 
         "vpl_test",
         ".vpl_tester",
@@ -279,6 +49,7 @@ class VPLTestCase(unittest.TestCase):
         "common_script.sh",
         "vpl_environment.sh",
         "vpl_compilation_error.txt",
+        "pre_vpl_run.sh",
     ]
 
     NON_EXECUTABLE_EXTENSIONS = [
@@ -286,34 +57,36 @@ class VPLTestCase(unittest.TestCase):
         ".jpeg",
         ".jpg",
         ".svg",
+        ".db"
     ]
 
-    key_source_files = None
-    ignore_files = []
+    key_source_files: list[str] | None = None   # type: ignore
+    ignore_files: list[str] = []
     ignore_extensions = []
+    
     permitted_student_languages = list(SupportedLanguages)
+
     run_basic_tests = []
-    # skip_basic_tests = vpltools.BASIC_TESTS
+
     include_pylint = False
 
     make_vpl_evaluate_cases_file = True
 
     mask_extension = ".save"
-    files_renamed: list[tuple[str, str]] = [] # old name, new_name
-
+    
     key_program_name = "key_program"
     key_outfile_name = "key_outfile"
 
     student_program_name = "student_program"
     student_outfile_name = "student_outfile"
 
-    student_program = None
-    key_program = None
+    student_program: SupportedLanguageProgram
+    key_program: SupportedLanguageProgram | None = None
 
     @classmethod
     def set_this_dir_name(cls):
         abs_path_to_this_file = sys.modules[cls.__module__].__file__
-        cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file)
+        cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file) # type: ignore
     
 
     @classmethod
@@ -326,14 +99,15 @@ class VPLTestCase(unittest.TestCase):
 
         if cls.key_source_files is None:
             warnings.warn("key_source_files unspecified! Assuming no key program. \nInitialize this class attribute to an empty list to silence this warning.")
-            cls.key_source_files = []
+            cls.key_source_files: list[str] = []
 
+        cls.files_renamed = [] # mutable class attributes to be modified need to be set here, not directly in class scope.
         cls.student_program = cls.compile_student_program()
         cls.key_program = cls.compile_key_program()
 
         cls.subprocess_run_options = {
             "cwd"           : cls.THIS_DIR_NAME, # Needed for programs to write their output files to the right place.
-            "env"           : copy(os.environ),
+            "env"           : deepcopy(os.environ), # Shallow copy = env changes persist to next TestCase class.
             "capture_output": True, 
             "text"          : True,
             # "timeout"       : 15,
@@ -342,7 +116,7 @@ class VPLTestCase(unittest.TestCase):
             #    This package should not be noticed. As the penguins say; "You didn't see anything..."
         }
         # Add current directory to PATH, so we can find our compiled binaries.
-        cls.subprocess_run_options["env"].update({ "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME }),
+        cls.subprocess_run_options["env"].update({ "PATH" : os.environ["PATH"] + ":" + cls.THIS_DIR_NAME })
 
         # Add this as a class attribute, so others can find it; e.g. to use pexpect.spawn.
         cls.program_execution_env = cls.subprocess_run_options["env"]
@@ -355,30 +129,51 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def import_as_py_module(cls, program: SupportedLanguageProgram, run_basic_tests: list[FunctionType] = []):
+    def import_as_py_module(cls, program: SupportedLanguageProgram | None, tests_to_run: list[FunctionType] = []):
         '''
         Returns a module object if program is a Python program, None otherwise. 
         None will also be returned if the import fails for any reason. This can happen 
-        if a Python script which expects arguments (which will not be suppplied during import).
-        Runs each of the basic tests suppplied.
+        if a Python script which expects arguments (which will not be supplied during import).
+        Runs each of the basic tests supplied.
         '''
         if not isinstance(program, PythonProgram):
             return None
         
-        try:
-            with contextlib.redirect_stdout(os.devnull, "w"):
-                module = importlib.import_module(os.path.splitext(program.executable_name)[0])
-                # I don't want any output from student modules when importing.
-        except: # In ANY part of the import fails, then return None.
-            return None
+        # Pipe any output received during import of student file into the null device.
+        null_dev = open(os.devnull, "w")
+
+        # When importing the 
+        student_file_name = os.path.splitext(program.executable_name)[0]
+
+        cwd_parts = os.getcwd().split(os.sep)
+        module_path_parts = cls.THIS_DIR_NAME.split(os.sep)
+
+        while len(cwd_parts) > 0 and len(module_path_parts) > 0 and cwd_parts[0] == module_path_parts[0]:
+            del cwd_parts[0]
+            del module_path_parts[0]
         
-        vpltools.run_basic_tests(module, run_basic_tests)
+        module_path_parts.append(student_file_name)
+
+        with contextlib.redirect_stdout(null_dev): # I don't want any output from student modules when importing.
+            try:
+                module = importlib.import_module(".".join(module_path_parts))
+            except ModuleNotFoundError:
+                module = importlib.import_module(module_path_parts[-1])
+            except: # In ANY part of the import fails, then return None.
+                null_dev.close()
+                return None
+
+        null_dev.close()
+        cls.student_program_name = student_file_name # change default name if we're in Python # TODO MOVE ME TO program creation logic
+        
+        run_basic_tests(module, tests_to_run)
+
         return module
 
     
 
     @classmethod
-    def find_student_files(cls):
+    def find_student_files(cls) -> list[str]:
         # if override_THIS_DIR_NAME is not None:
             # cls.THIS_DIR_NAME = override_THIS_DIR_NAME
         return [ file for file in os.listdir(cls.THIS_DIR_NAME) 
@@ -392,7 +187,7 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def compile_student_program(cls, recompile=False):
+    def compile_student_program(cls, recompile=False) -> SupportedLanguageProgram:
         '''
         Language-agnostic logic for finding an compiling student programs. 
         Returns a SupportedLanguageProgram object which can be used to 
@@ -408,19 +203,22 @@ class VPLTestCase(unittest.TestCase):
         student_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
 
         if student_program.language not in cls.permitted_student_languages:
-            raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {cls.permitted_student_languages}")
+            raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {", ".join(pl.name for pl in cls.permitted_student_languages)}")
         
         print("Stu program:", *student_program.source_files)
         return student_program
 
 
     @classmethod
-    def compile_key_program(cls, recompile=False):
+    def compile_key_program(cls, recompile=False) -> SupportedLanguageProgram | None:
         '''
         Language-agnostic logic for finding an compiling key programs. 
         Returns a SupportedLanguageProgram object which can be used to 
         invoke the program.
         '''
+        if cls.key_source_files == []:
+            return None
+        
         key_program = cls.detectLanguageAndMakeProgram(
             cls.key_source_files,
             cls.key_program_name,
@@ -431,10 +229,10 @@ class VPLTestCase(unittest.TestCase):
             key_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
             print("Key program:", *key_program.source_files)
             return key_program
-    
+
 
     @classmethod
-    def unmask_hidden_files(cls, file_list: list[str]):
+    def unmask_hidden_files(cls, file_list: list[str]) -> None:
         '''
         To avoid encountering problems with VPL's standard compilation
         behavior, we can't have multiple files with valid extensions 
@@ -447,8 +245,7 @@ class VPLTestCase(unittest.TestCase):
                 new_name = file_list[i][:-len(cls.mask_extension)]
                 os.rename(
                     os.path.join(cls.THIS_DIR_NAME, file_list[i]),
-                    os.path.join(cls.THIS_DIR_NAME, new_name)
-                )
+                    os.path.join(cls.THIS_DIR_NAME, new_name))
                 cls.files_renamed.append((file_list[i] , new_name))
                 file_list[i] = new_name
 
@@ -461,10 +258,10 @@ class VPLTestCase(unittest.TestCase):
         SupportedLanguageProgram subclass.
         '''
         if file_list == []:
-            return 
+            raise NoProgramError("Program not found!")
 
-        current_program_lang: SupportedLanguages = None
-        current_program_class: SupportedLanguageProgram = None
+        current_program_lang: SupportedLanguages = None         # type: ignore
+        current_program_class: SupportedLanguageProgram = None  # type: ignore
         source_files = []
         
         if unmask_hidden_files:
@@ -488,12 +285,13 @@ class VPLTestCase(unittest.TestCase):
             raise FileNotFoundError(f"No submission found, or couldn't infer programming language! Found files: {file_list}")
         
         executable_name += "_" + os.path.splitext(source_files[0])[0]
-        return current_program_class(cls.THIS_DIR_NAME, executable_name, source_files, output_file_name)
+        return current_program_class(cls.THIS_DIR_NAME, executable_name, source_files, output_file_name) # type: ignore
 
 
     @classmethod
     def remask_hidden_files(cls):
-        for old_name, new_name in cls.files_renamed:
+        while cls.files_renamed:
+            old_name, new_name = cls.files_renamed.pop()
             os.rename(
                 os.path.join(cls.THIS_DIR_NAME, new_name),
                 os.path.join(cls.THIS_DIR_NAME, old_name)
@@ -509,7 +307,7 @@ class VPLTestCase(unittest.TestCase):
         if cls.make_vpl_evaluate_cases_file: 
             test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
             vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
-            vpltools.make_cases_file_from_list(
+            make_cases_file_from_list(
                 cls.THIS_DIR_NAME,
                 vpl_test_tuples,
                 cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False
@@ -520,7 +318,7 @@ class VPLTestCase(unittest.TestCase):
     
 
     @classmethod
-    def makeVPLTestTuples(cls, test_suite) -> list[tuple[str]]:
+    def makeVPLTestTuples(cls, test_suite: unittest.TestSuite) -> list[tuple[str, str, str]]:
         '''
         Walks the TestSuite hierarchy looking for TestCase objects.
         When found, adds a tuple containing:
@@ -556,7 +354,7 @@ class VPLTestCase(unittest.TestCase):
             raise NoProgramError("Student program not found!")
 
         # A few things could go wrong here. You could be testing on multiple machines, and 
-        # and your Git repo contains an old executable which is not compatiable with the 
+        # and your Git repo contains an old executable which is not compatible with the 
         # current machine. This raises OSError, so recompile and try again.
         # Another potential problem is that the program runs, but experiences some kind of 
         # runtime error. This is not raised as an exception (see the subprocess_run_options)

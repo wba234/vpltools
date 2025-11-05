@@ -1,7 +1,15 @@
-# basic_tests.py -- William Bailey -- 19 May 2023.
 '''
-A module for automatic discovery of student submission files in the 
-current working directory. Intended for use with Moodle VPL activities.
+basic_tests.py -- William Bailey -- william.bailey@centre.edu -- May 2023
+
+A set of checks for adherence to common programming practices, such as:
+- prohibitions on the use of "global" (module scope) variable,
+- use of a main function. 
+These are specifically for Python programs.
+
+To add another basic test, perform the following steps:
+1. Define a function which performs the test. The function should return True
+   if the test passes, and raise BasicTestFailedError if the test fails.
+2. Include the function in the list basic_tests.BASIC_TESTS, at the end of this file.
 '''
 
 __unittest = True
@@ -49,6 +57,8 @@ def has_main_function(module) -> bool:
         return True
     
     raise BasicTestFailedError(f"This assignment requires a main function!")
+
+# ---------------------------------------------------------------------------------------
 
 BASIC_TESTS = [
     has_no_globals,

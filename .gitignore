@@ -6,6 +6,7 @@
 # Ignore packaging and distribution directories.
 build/
 dist/
+src/*.egg-info
 
 # Ignore my settings file, but not the snippets file.
 .vscode/settings.json

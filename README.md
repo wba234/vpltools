@@ -34,7 +34,7 @@ temperature_conversion_lab
 You also need to enable the ***keep files when running*** option for each of these.
 
 ### Writing Tests
-Test file names should start with "test" and be located in the same directory as your answer key program, and any simulated student submissions to run the tests on. Write tests as your normally would with Python's ```unittest``` module. The ```vpl_evaluate.cases``` file is generated automatically (in ```tearDownClass```) when the set of test cases runs to completion. 
+Test file names should start with "test_" and be located in the same directory as your answer key program, and any simulated student submissions to run the tests on. Write tests as your normally would with Python's ```unittest``` module. The ```vpl_evaluate.cases``` file is generated automatically (in ```tearDownClass```) when the set of test cases runs to completion. 
 
 In addition to the features of the ```unittest``` package, you can use the following attributes and functions provided by ```VPLTestCase```:
    #### Important Methods
@@ -49,6 +49,7 @@ In addition to the features of the ```unittest``` package, you can use the follo
         - ```"CPP"```
         - ```"JAVA"```
         - ```"PYTHON"```
+        - ```"SQL"```
 
    - ```student_py_module: ModuleType | None``` - Use this to access student functions directly (Python submissions only).
    - ```key_py_module: ModuleType | None``` - Use this to access solution program functions directly (Python solutions only).
@@ -187,14 +188,16 @@ There is a snippet for this boilerplate in ```/.vscode```. The format of the sni
 - Somehow block files with ( ) in the name? SQLite seems to have trouble with them.
 - Make Java packages work?
 - Add more tests for this. 
+- Add snippets for SQL tests.
+- Add snippets for other language End-to-end tests.
+- Add snippets for regex tests.
 - Test this under Windows? VPLJail is a POSIX system, right? Do I need to worry about windows?
+- Add instrumentation, so that submissions could be tracked and studied. You'll probably want a database for this, and to seek IRB approval before switching it on.
+- What would it take to add support for detecting AI-generated code?
+- Make Java packages work?
+- Publish this to PPI?
 - Add a method for writing student and key output files to memory mapped files, for speed.
 - Add a method for writing each test output file from the key program to a separate file, so that they can be cached, for speed.
-- SQL Unittets need their 
-    ```vpltools.make_vpl_evaluate_cases(__file__, locals(), include_pylint=False)``` at the bottom rolled into a ```tearDownClass``` method. This goes for all the various types of tests. NO BOILERPLATE.
-- Add other basic tests?
-- publish this to PPI?
-- Using Key Output Files instead of Re-running Key program each time. This can speed up submission processing. See the ```VPLTestCase.use_pre_computed_key```.
 
 ## Installation
 To use this with Moodle VPLs, you will need to install this package into your Moodle VPLJail manually. At time of writing, ```vpltools``` is _not_ in the Python Package Index. To install manually:
@@ -205,6 +208,11 @@ To use this with Moodle VPLs, you will need to install this package into your Mo
 ### Installing in VPLJail
 You _should not_ install this in editable mode in the VPLJail. This will cause the package not to be found by the Python interpreter. Also, after installing anything into the VPLJail, you should restart the service with: ```systemctl restart vpl-jail-service```.
 
+### Before Installing
+This package requires the ```mariadb``` Python package. This means that there must be a functioning MariaDB installation, including the system packages ```libmariadb3``` ```libmariadb-dev```. So before installing ```vpltools```, run this command:
+```bash
+sudo apt install mariadb-server libmariadb3 libmariadb-dev
+```
 
 ## Build Process
 1. Navigate to top level directory.
