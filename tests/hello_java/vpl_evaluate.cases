@@ -2,6 +2,6 @@ Case = test_hello_java
 program to run = /usr/bin/python3
 program arguments = -m unittest test_hello_java.TestHelloJava.test_hello_java
 expected exit code = 0
-output = /.*OK/i
+output = /.*OK.*/i
 grade reduction = 100%
 
