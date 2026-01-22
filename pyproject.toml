@@ -9,7 +9,7 @@ version = "0.20"
 authors = [
   { name="William Bailey", email="william.bailey@centre.edu" },
 ]
-description = "Facilitates Moodle VPL use by providing extensible subclasses of unittest.TestCase working directory for other python files."
+description = "Facilitates Moodle VPL use by providing extensible subclasses of unittest.TestCase."
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
