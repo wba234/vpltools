@@ -2,20 +2,20 @@ Case = testMaxDeveloperGrades
 program to run = /usr/bin/python3
 program arguments = -m unittest test_max_developer_grades.TestMaxDeveloperGrades.testMaxDeveloperGrades
 expected exit code = 0
-output = /.*OK/i
+output = /.*OK.*/i
 grade reduction = 100%
 
 Case = testNoNaturalJoin
 program to run = /usr/bin/python3
 program arguments = -m unittest test_max_developer_grades.TestMaxDeveloperGrades.testNoNaturalJoin
 expected exit code = 0
-output = /.*OK/i
+output = /.*OK.*/i
 grade reduction = 100%
 
 Case = testNoSelectAll
 program to run = /usr/bin/python3
 program arguments = -m unittest test_max_developer_grades.TestMaxDeveloperGrades.testNoSelectAll
 expected exit code = 0
-output = /.*OK/i
+output = /.*OK.*/i
 grade reduction = 100%
 

@@ -203,7 +203,7 @@ class VPLTestCase(unittest.TestCase):
         student_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
 
         if student_program.language not in cls.permitted_student_languages:
-            raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {", ".join(pl.name for pl in cls.permitted_student_languages)}")
+            raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {', '.join(pl.name for pl in cls.permitted_student_languages)}")
         
         print("Stu program:", *student_program.source_files)
         return student_program
