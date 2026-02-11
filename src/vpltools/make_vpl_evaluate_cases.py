@@ -2,20 +2,21 @@
 Provides functions for automatically generating vpl_evaluate.cases files
 for use with Moodle VPL assignments.
 '''
-import os.path
+# import os.path
+import os
 
 __unittest = True
 
-def overwrite_file_if_different(file_path: str, new_contents: str, verbose: bool = True) -> bool:
+def overwrite_file_if_different(file_path: str, new_contents: str, verbose: bool = False) -> bool:
     '''
     Given the path to the existing vpl_evaluate.cases file, and 
     the desired contents of the file, update it if they are different.
     '''
+    did_write_file = False
     # Two cases for writing the file:
     # 1. It doesn't exist.
     # 2. It's out of date.
     print("\nMaking vpl_evaluate.cases...", end="")
-    did_write_file = False
     try:
         with open(file_path, 'r') as old_file_object:
             old_file_contents = old_file_object.read()
@@ -123,7 +124,7 @@ def get_vpl_eval_path(module_path: str) -> str:
         "vpl_evaluate.cases")
 
 
-def make_cases_file_from_list(module_path: str, test_method_list: list[tuple[str, str, str]], include_pylint: bool):
+def make_cases_file_from_list(module_path: str, test_method_list: list[tuple[str, str, str]], include_pylint: bool, verbose: bool):
     '''
     Writes or overwrites the vpl_evaluate.cases file located alongside 
     student's module. Writes one "case" block for each element of test_method_list, 
@@ -138,7 +139,7 @@ def make_cases_file_from_list(module_path: str, test_method_list: list[tuple[str
         all_test_cases_string += pylint_case_block(test_method_list[0][0])
 
     vpl_eval_path = get_vpl_eval_path(module_path)
-    overwrite_file_if_different(vpl_eval_path, all_test_cases_string)
+    overwrite_file_if_different(vpl_eval_path, all_test_cases_string, verbose)
 
         
 if __name__ == '__main__':

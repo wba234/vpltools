@@ -1,3 +1,5 @@
+import re
+import os
 import sys
 import unittest
 import warnings
@@ -5,7 +7,13 @@ import importlib
 from types import FunctionType
 from copy import deepcopy
 import contextlib
-from vpltools.supported_languages import *
+from vpltools.supported_languages import (
+    SupportedLanguages, 
+    SupportedLanguageProgram,
+    PythonProgram, 
+    NoProgramError, 
+    OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE
+)
 from vpltools.basic_tests import run_basic_tests
 from vpltools.make_vpl_evaluate_cases import make_cases_file_from_list
 
@@ -70,6 +78,7 @@ class VPLTestCase(unittest.TestCase):
 
     include_pylint = False
 
+    verbose = True
     make_vpl_evaluate_cases_file = True
 
     mask_extension = ".save"
@@ -87,6 +96,19 @@ class VPLTestCase(unittest.TestCase):
     def set_this_dir_name(cls):
         abs_path_to_this_file = sys.modules[cls.__module__].__file__
         cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file) # type: ignore
+
+
+    @classmethod
+    def in_production_environment(cls):
+        '''
+        Check if we are running production by:
+        - asking if the username is of the format used by the vpl jail server
+        - asking if we are in that user's home directory
+        If both of these are true, we connvict on circumstantial evidence., and
+        '''
+        return ((username := os.getenv("USER")) is not None 
+                and (match := re.search('p[0-9]+', username)) is not None 
+                and os.getcwd() == f"/home/{match.group(0)}")
     
 
     @classmethod
@@ -124,6 +146,10 @@ class VPLTestCase(unittest.TestCase):
         # If the student program is a Python program, import it as a module.
         cls.student_py_module = cls.import_as_py_module(cls.student_program, cls.run_basic_tests)
         cls.key_py_module = cls.import_as_py_module(cls.key_program)
+
+        if cls.in_production_environment():
+            cls.make_vpl_evaluate_cases_file = False
+            cls.verbose = False
 
         return super().setUpClass()
 
@@ -310,7 +336,8 @@ class VPLTestCase(unittest.TestCase):
             make_cases_file_from_list(
                 cls.THIS_DIR_NAME,
                 vpl_test_tuples,
-                cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False
+                cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False,
+                cls.verbose
             )
 
         cls.remask_hidden_files()
@@ -399,6 +426,21 @@ class VPLTestCase(unittest.TestCase):
                 + "> " + key_process.stderr.replace("\n", "\n> ")))
 
         return key_process
+
+
+# This saves the vpltools user an import, allowing them to write the idiom
+# if __name__ == "__main__":
+#     vpltools.main()
+# 
+# Instead of this:
+# if __name__ == "__main__":
+#     unittest.main()
+# 
+# This idiom is useful to allow the test file to be run directly as a script, i.e.,
+# $ python3 test_my_program.py
+# Instead of only via discovery using the unittest package, i.e.,
+# $ python3 -m unittest
+main = unittest.main
 
 if __name__ == "__main__":
     print("Are you lost? You look lost.")
