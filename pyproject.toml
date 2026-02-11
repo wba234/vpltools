@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vpltools"
-version = "0.19"
+version = "0.20"
 authors = [
   { name="William Bailey", email="william.bailey@centre.edu" },
 ]
-description = "Facilitates Moodle VPL use by providing extensible subclasses of unittest.TestCase working directory for other python files."
+description = "Facilitates Moodle VPL use by providing extensible subclasses of unittest.TestCase."
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
@@ -19,9 +19,9 @@ dependencies = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+license = "MIT"
 
 [project.urls]
 "Homepage" = "https://github.com/wba234/baileycs1"
