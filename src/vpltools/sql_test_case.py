@@ -185,15 +185,9 @@ class TestSQLQuery(vpltools.VPLTestCase):
 
 
     @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        if not cls.key_source_files:
-            print("No pre_vpl_run.sh needed.")
-            return
-        
-        print("Writing pre_vpl_run.sh...", end="")
+    def make_pre_vpl_run_sh(cls):
         bash_file_list = " ".join([ f'"{key_file}"' for key_file in cls.key_source_files ])
-        pre_run_sh_contents = (
+        cls.pre_vpl_run_sh_contents += (
              f'for file in {bash_file_list}\n'
             + 'do\n'
             +f'if [ -f "$file" ]; then\n'
@@ -202,20 +196,40 @@ class TestSQLQuery(vpltools.VPLTestCase):
             + '    echo "Success."\n'
             + 'fi\n'
             + 'done\n')
+        return super().make_pre_vpl_run_sh()
 
-        pre_run_sh_path = os.path.join(cls.THIS_DIR_NAME, "pre_vpl_run.sh")
-        try:
-            with open(pre_run_sh_path, "r") as pre_run_fo:
-                old_pre_run_contents = pre_run_fo.read()
-        except FileNotFoundError:
-            old_pre_run_contents = None # If it doesn't exist, create it.
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        if not cls.key_source_files:
+            # print("No pre_vpl_run.sh needed.")
+            return
         
-        if old_pre_run_contents != pre_run_sh_contents: # Compare to None is always False
-            with open(pre_run_sh_path, "w") as pre_run_fo:
-                pre_run_fo.write(pre_run_sh_contents)
-        else:
-            print("no changes...", end="")
-        print("done.")
+        # print("Writing pre_vpl_run.sh...", end="")
+        # bash_file_list = " ".join([ f'"{key_file}"' for key_file in cls.key_source_files ])
+        # pre_run_sh_contents = (
+        #      f'for file in {bash_file_list}\n'
+        #     + 'do\n'
+        #     +f'if [ -f "$file" ]; then\n'
+        #     +f'    mv "$file" "$file{cls.mask_extension}"\n'
+        #     # +f'    echo "$file moved."\n'
+        #     + '    echo "Success."\n'
+        #     + 'fi\n'
+        #     + 'done\n')
+
+        # pre_run_sh_path = os.path.join(cls.THIS_DIR_NAME, "pre_vpl_run.sh")
+        # try:
+        #     with open(pre_run_sh_path, "r") as pre_run_fo:
+        #         old_pre_run_contents = pre_run_fo.read()
+        # except FileNotFoundError:
+        #     old_pre_run_contents = None # If it doesn't exist, create it.
+        
+        # if old_pre_run_contents != pre_run_sh_contents: # Compare to None is always False
+        #     with open(pre_run_sh_path, "w") as pre_run_fo:
+        #         pre_run_fo.write(pre_run_sh_contents)
+        # else:
+        #     print("no changes...", end="")
+        # print("done.")
 
 
 

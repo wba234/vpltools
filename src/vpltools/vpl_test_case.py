@@ -78,8 +78,10 @@ class VPLTestCase(unittest.TestCase):
 
     include_pylint = False
 
+    # Default settings for running in a "development environment"
     verbose = True
     make_vpl_evaluate_cases_file = True
+    make_pre_vpl_run_sh_file = True
 
     mask_extension = ".save"
     
@@ -91,6 +93,9 @@ class VPLTestCase(unittest.TestCase):
 
     student_program: SupportedLanguageProgram
     key_program: SupportedLanguageProgram | None = None
+
+    # This may be appended to by subclasses like TestSQLQuery
+    pre_vpl_run_sh_contents = "python3 -m vpltools"
 
     @classmethod
     def set_this_dir_name(cls):
@@ -148,8 +153,11 @@ class VPLTestCase(unittest.TestCase):
         cls.key_py_module = cls.import_as_py_module(cls.key_program)
 
         if cls.in_production_environment():
-            cls.make_vpl_evaluate_cases_file = False
+            # TODO: use fewer flags, just refer to whether or not we are in production 
+            # when making decisions.
             cls.verbose = False
+            cls.make_vpl_evaluate_cases_file = False
+            cls.make_pre_vpl_run_sh_file = False
 
         return super().setUpClass()
 
@@ -315,7 +323,34 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def remask_hidden_files(cls):
+    def make_pre_vpl_run_sh(cls) -> None:
+        '''
+        Writes the class attribute pre_vpl_run_sh_contents to the 
+        pre_vpl_run.sh file. This should be called by subclasses like TestSQLQuery
+        after they have appended any modifications to the class attribute string.
+        '''
+        if not cls.make_pre_vpl_run_sh_file:
+            return
+
+        print("Writing pre_vpl_run.sh...", end="")
+        pre_run_sh_path = os.path.join(cls.THIS_DIR_NAME, "pre_vpl_run.sh")
+        # Get contents of existing pre_vpl_run.sh
+        try:
+            with open(pre_run_sh_path, "r") as pre_run_fo:
+                old_pre_run_contents = pre_run_fo.read()
+        except FileNotFoundError:
+            old_pre_run_contents = None # If it doesn't exist, create it.
+        
+        if old_pre_run_contents != cls.pre_vpl_run_sh_contents: # Compare to None is always False
+            with open(pre_run_sh_path, "w") as pre_run_fo:
+                pre_run_fo.write(cls.pre_vpl_run_sh_contents)
+        else:
+            print("no changes...", end="")
+        print("done.")
+
+
+    @classmethod
+    def remask_hidden_files(cls) -> None:
         while cls.files_renamed:
             old_name, new_name = cls.files_renamed.pop()
             os.rename(
@@ -325,22 +360,33 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
+    def make_vpl_evaluate_cases(cls) -> None:
+        '''
+        Writes the vpl_evaluate.cases, unless 
+        '''
+        if not cls.make_vpl_evaluate_cases_file:
+            return
+        
+        test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
+        vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
+        make_cases_file_from_list(
+            cls.THIS_DIR_NAME,
+            vpl_test_tuples,
+            cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False,
+            cls.verbose
+        )
+
+
+    @classmethod
     def tearDownClass(cls):
         '''
         Find all names of unittest.TestCase test_* methods, and write them to 
         a file in the same directory as the subclass of this.
         '''
-        if cls.make_vpl_evaluate_cases_file: 
-            test_suite = unittest.defaultTestLoader.discover(cls.THIS_DIR_NAME)
-            vpl_test_tuples = cls.makeVPLTestTuples(test_suite)
-            make_cases_file_from_list(
-                cls.THIS_DIR_NAME,
-                vpl_test_tuples,
-                cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False,
-                cls.verbose
-            )
-
-        cls.remask_hidden_files()
+        cls.make_pre_vpl_run_sh()
+        cls.remask_hidden_files()        
+        cls.make_vpl_evaluate_cases()
+ 
         return super().tearDownClass()
     
 
@@ -442,5 +488,10 @@ class VPLTestCase(unittest.TestCase):
 # $ python3 -m unittest
 main = unittest.main
 
-if __name__ == "__main__":
-    print("Are you lost? You look lost.")
+if __name__ == "__main__" and not VPLTestCase.in_production_environment():
+    # In a "production environment", i.e., running on the VPL Jail server, 
+    # running this module should produce the vpl_evaluate.cases file. 
+    # This module will be run when the VPL Jail executes pre_vpl_run.sh. 
+    # In a development environment, both vpl_evaluate.cases and pre_vpl_run.sh 
+    # are produced by tearDownClass(), and not executing this module.
+    VPLTestCase.make_vpl_evaluate_cases()
