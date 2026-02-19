@@ -1,0 +1,14 @@
+Case = test_hello_c
+program to run = /usr/bin/python3
+program arguments = -m unittest test_key_program_C.TestKeyProgramC.test_hello_c
+expected exit code = 0
+output = /.*OK.*/i
+grade reduction = 100%
+
+Case = test_programs_exist
+program to run = /usr/bin/python3
+program arguments = -m unittest test_key_program_C.TestKeyProgramC.test_programs_exist
+expected exit code = 0
+output = /.*OK.*/i
+grade reduction = 100%
+
