@@ -1,6 +1,5 @@
-import unittest
 import vpltools
-import pdb
+
 __unittest = True # Keep, to silence tracebacks.
 
 g_source_files = [ ]
@@ -348,4 +347,4 @@ class test_match_decimal_numbers(vpltools.RegexTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    vpltools.main()

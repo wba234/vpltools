@@ -1,5 +1,4 @@
 import vpltools
-import unittest
 
 __unittest = True
 
@@ -17,4 +16,4 @@ class TestMaxDeveloperGrades(vpltools.TestSQLSelectQuery):
         self.assertQueryOutputsEqual()
 
 if __name__ == "__main__":
-    unittest.main()
+    vpltools.main()

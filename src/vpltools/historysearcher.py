@@ -1,13 +1,9 @@
 import os
-import unittest
-import warnings
-import sys
-
-from vpltools import VPLTestCase
+import vpltools
 
 __unittest = True
 
-class HistorySearcher(VPLTestCase):
+class HistorySearcher(vpltools.VPLTestCase):
     # __test__ = False
     key_source_files = []
     commands_to_find = []
@@ -64,4 +60,4 @@ class HistorySearcher(VPLTestCase):
             self.fail(msg=f"Expected all commands to be run, got {num_commands_found} of {len(self.commands_to_find)}")
 
 if __name__ == "__main__":
-    unittest.main()
+    vpltools.main()

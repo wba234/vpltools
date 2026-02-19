@@ -88,7 +88,7 @@ class TestF2C(vpltools.VPLTestCase):
         self.mainAssertLogic(boilingTempF)
 
 if __name__ == '__main__':
-    unittest.main()
+    vpltools.main()
 ```
 
 Note that ```__unittest = True``` has the effect of suppressing parts of error tracebacks which originate from within testing code, and which can be confusing to students.
@@ -173,7 +173,7 @@ class TestBruteForceKnapsack(VPLTestCase):
                 + "\t- the order of lines in each 3-line block.\n"))
 
 if __name__ == "__main__":
-    unittest.main()
+    vpltools.main()
 ```
 
 ## Other Programming Assignments
@@ -185,6 +185,7 @@ In addition to ```VPLTestCase``` VPLTools also provides some classes which suppo
 There is a snippet for this boilerplate in ```/.vscode```. The format of the snippet (JSON) is a little specific to VSCode, but the code can be extracted relatively easily. Type ```test``` in a snakefile to trigger the snippet. 
 
 # To Do
+- Make sure that "Making vpl_evaluate.cases..." and "Making vpl_pre_run.sh..." don't appear where students can see them. Keep the output clean. Perhaps don't have expected program output? Just the return code?
 - Somehow block files with ( ) in the name? SQLite seems to have trouble with them.
 - Make Java packages work?
 - Add more tests for this. 

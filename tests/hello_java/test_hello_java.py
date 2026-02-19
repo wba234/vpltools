@@ -1,4 +1,3 @@
-import unittest
 import vpltools
 
 __unittest = True
@@ -18,4 +17,4 @@ class TestHelloJava(vpltools.VPLTestCase):
         self.assertEqual(student_process.stdout, "Hello World!\n")
         
 if __name__ == "__main__":
-    unittest.main()
+    vpltools.main()

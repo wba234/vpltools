@@ -1,4 +1,3 @@
-import unittest
 import vpltools
 
 __unittest = True
@@ -22,4 +21,4 @@ class test_multi_class_java_program(vpltools.VPLTestCase):
         # If this worked, then we compiled successfully.
         
 if __name__ == "__main__":
-    unittest.main()
+    vpltools.main()

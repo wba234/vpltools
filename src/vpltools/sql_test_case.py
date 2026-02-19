@@ -391,4 +391,4 @@ class TestSQLSelectQuery(TestSQLQuery):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    vpltools.main()

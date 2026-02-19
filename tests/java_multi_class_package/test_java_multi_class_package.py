@@ -7,8 +7,6 @@ import unittest
 import vpltools
 import warnings
 
-import vpltools.vpl_test_case
-
 __unittest = True
 
 class test_multi_class_java_package(vpltools.VPLTestCase):
@@ -39,7 +37,7 @@ class test_multi_class_java_package(vpltools.VPLTestCase):
 
         try:
             self.student_program = self.compile_student_program()
-        except vpltools.vpl_test_case.UnsupportedFeatureError:
+        except vpltools.UnsupportedFeatureError:
             self.fail("Java packages are not supported.")
 
         student_process = self.run_student_program([], input_string="")
@@ -47,4 +45,4 @@ class test_multi_class_java_package(vpltools.VPLTestCase):
 
         
 if __name__ == "__main__":
-    unittest.main()
+    vpltools.main()

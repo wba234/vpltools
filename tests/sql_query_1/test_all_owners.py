@@ -1,4 +1,3 @@
-import unittest
 import vpltools
 
 __unittest = True
@@ -23,5 +22,5 @@ class TestOwnerNames(vpltools.TestSQLSelectQuery):
         self.assertQueryOutputsEqual()
 
 if __name__ == "__main__":
-    unittest.main()
+    vpltools.main()
         
