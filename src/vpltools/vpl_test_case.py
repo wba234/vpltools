@@ -18,7 +18,7 @@ from vpltools.basic_tests import run_basic_tests
 from vpltools.make_vpl_evaluate_cases import make_cases_file_from_list
 
 __unittest = True
-
+# TODO: Remove student_program_name attribute. It's confusing. Call it student_program_base_name
 class VPLTestCase(unittest.TestCase):
     '''
     VPLTestCase provides most of the key functionality of vpltools.
@@ -158,6 +158,7 @@ class VPLTestCase(unittest.TestCase):
             cls.verbose = False
             cls.make_vpl_evaluate_cases_file = False
             cls.make_pre_vpl_run_sh_file = False
+            cls.production_environment = True
 
         return super().setUpClass()
 
@@ -239,7 +240,9 @@ class VPLTestCase(unittest.TestCase):
         if student_program.language not in cls.permitted_student_languages:
             raise NoProgramError(f"{student_program.language.name} is not permitted for this assignment. Options are: {', '.join(pl.name for pl in cls.permitted_student_languages)}")
         
-        print("Stu program:", *student_program.source_files)
+        if not cls.production_environment:
+            print("Stu program:", *student_program.source_files)
+
         return student_program
 
 
@@ -261,7 +264,9 @@ class VPLTestCase(unittest.TestCase):
         )
         if key_program is not None:
             key_program.compile(cls.THIS_DIR_NAME, recompile=recompile)
-            print("Key program:", *key_program.source_files)
+            if not cls.production_environment:
+                print("Key program:", *key_program.source_files)
+
             return key_program
 
 
@@ -332,7 +337,7 @@ class VPLTestCase(unittest.TestCase):
         if not cls.make_pre_vpl_run_sh_file:
             return
 
-        print("Writing pre_vpl_run.sh...", end="")
+        print("\nWriting pre_vpl_run.sh...", end="")
         pre_run_sh_path = os.path.join(cls.THIS_DIR_NAME, "pre_vpl_run.sh")
         # Get contents of existing pre_vpl_run.sh
         try:
