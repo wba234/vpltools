@@ -94,13 +94,41 @@ class VPLTestCase(unittest.TestCase):
     student_program: SupportedLanguageProgram
     key_program: SupportedLanguageProgram | None = None
 
-    # This may be appended to by subclasses like TestSQLQuery
-    pre_vpl_run_sh_contents = "python3 -m vpltools"
+    # The sh_contents may be appended to by subclasses like TestSQLQuery.
+    pre_vpl_run_sh_contents = (
+        '#!/usr/bin/env bash\n'
+      + '\n'
+      + '# Get the directory in which the present script is located.\n'
+      + 'SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )\n'
+      + '# Source - https://stackoverflow.com/a/246128\n'
+      + '# Posted by dogbane, modified by community. See post \'Timeline\' for change history\n'
+      + '# Retrieved 2026-02-24, License - CC BY-SA 4.0\n'
+      + '\n'
+      + 'echo "$SCRIPT_DIR"\n'
+      + 'python3 -m vpltools "$SCRIPT_DIR" &> /dev/null\n'
+    )
+
+    # Typically, objects of VPLTestCase are not created. Instead, 
+    # objects of derived classes are created. These objects contain 
+    # the actual test methods. The modules where these derived classes
+    # are defined are summarized into the vpl_evaluate.cases file by 
+    # unittest.defaultTestLoader.discover().
+    # 
+    # But a subclass isn't the one invoking the .make_vpl_evaluate()
+    # method here, so the directory of this module will be used, 
+    # instead of that of the derived class. So we need to provide a 
+    # path to the derived class to override the usual behavior, hence
+    # this_dir_name_override. This attribute is set by the vpltools 
+    # __main__.py script, which is invoked by pre_vpl_run.sh is run.
+    this_dir_name_override: str | None = None   # directory of subclass files
 
     @classmethod
     def set_this_dir_name(cls):
         abs_path_to_this_file = sys.modules[cls.__module__].__file__
         cls.THIS_DIR_NAME, cls.THIS_FILE_NAME = os.path.split(abs_path_to_this_file) # type: ignore
+
+        if cls.this_dir_name_override is not None:
+            cls.THIS_DIR_NAME = cls.this_dir_name_override
 
 
     @classmethod
@@ -123,6 +151,19 @@ class VPLTestCase(unittest.TestCase):
         Imports python modules, and runs basic tests on student modules.
         '''
         cls.set_this_dir_name()
+
+        if cls.in_production_environment():
+            # TODO: use fewer flags, just refer to whether or not we are in production 
+            # when making decisions. Also, there must be a more compact way of doing this.
+            cls.verbose = False
+            cls.make_vpl_evaluate_cases_file = False
+            cls.make_pre_vpl_run_sh_file = False
+            cls.production_environment = True
+        else:
+            cls.verbose = True
+            cls.make_vpl_evaluate_cases_file = True
+            cls.make_pre_vpl_run_sh_file = True
+            cls.production_environment = False
 
         if cls.key_source_files is None:
             warnings.warn("key_source_files unspecified! Assuming no key program. \nInitialize this class attribute to an empty list to silence this warning.")
@@ -151,14 +192,6 @@ class VPLTestCase(unittest.TestCase):
         # If the student program is a Python program, import it as a module.
         cls.student_py_module = cls.import_as_py_module(cls.student_program, cls.run_basic_tests)
         cls.key_py_module = cls.import_as_py_module(cls.key_program)
-
-        if cls.in_production_environment():
-            # TODO: use fewer flags, just refer to whether or not we are in production 
-            # when making decisions.
-            cls.verbose = False
-            cls.make_vpl_evaluate_cases_file = False
-            cls.make_pre_vpl_run_sh_file = False
-            cls.production_environment = True
 
         return super().setUpClass()
 
@@ -486,17 +519,6 @@ class VPLTestCase(unittest.TestCase):
 # Instead of this:
 # if __name__ == "__main__":
 #     unittest.main()
-# 
-# This idiom is useful to allow the test file to be run directly as a script, i.e.,
-# $ python3 test_my_program.py
-# Instead of only via discovery using the unittest package, i.e.,
-# $ python3 -m unittest
+
 main = unittest.main
 
-if __name__ == "__main__" and not VPLTestCase.in_production_environment():
-    # In a "production environment", i.e., running on the VPL Jail server, 
-    # running this module should produce the vpl_evaluate.cases file. 
-    # This module will be run when the VPL Jail executes pre_vpl_run.sh. 
-    # In a development environment, both vpl_evaluate.cases and pre_vpl_run.sh 
-    # are produced by tearDownClass(), and not executing this module.
-    VPLTestCase.make_vpl_evaluate_cases()
