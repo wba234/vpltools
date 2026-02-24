@@ -1,0 +1,7 @@
+Case = test_dogstacker_compilation
+program to run = /usr/bin/python3
+program arguments = -m unittest test_java_multi_class_program.test_multi_class_java_program.test_dogstacker_compilation
+expected exit code = 0
+output = /.*OK.*/i
+grade reduction = 100%
+
