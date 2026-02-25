@@ -369,7 +369,7 @@ class VPLTestCase(unittest.TestCase):
         if not cls.make_pre_vpl_run_sh_file:
             return
 
-        print("\nWriting pre_vpl_run.sh...", end="")
+        print("\nMaking pre_vpl_run.sh.......", end="")
         pre_run_sh_path = os.path.join(cls.THIS_DIR_NAME, "pre_vpl_run.sh")
         # Get contents of existing pre_vpl_run.sh
         try:
