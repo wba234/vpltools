@@ -104,7 +104,6 @@ class VPLTestCase(unittest.TestCase):
       + '# Posted by dogbane, modified by community. See post \'Timeline\' for change history\n'
       + '# Retrieved 2026-02-24, License - CC BY-SA 4.0\n'
       + '\n'
-      + 'echo "$SCRIPT_DIR"\n'
       + 'python3 -m vpltools "$SCRIPT_DIR" &> /dev/null\n'
     )
 
