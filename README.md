@@ -255,7 +255,7 @@ A summary of the commands used is below, along with the suggested directory stru
    `- pyproject.toml
 ```
 
-The commands are fun from within the top-level module directory: ```~/Documents/vpltools/```
+The commands are run from within the top-level module directory: ```~/Documents/vpltools/```
 ```bash
 python3.10 -m pip install --upgrade build  # failed?
 python3.10 -m build                        # failed to create virtual environment
