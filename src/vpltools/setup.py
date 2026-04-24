@@ -7,13 +7,13 @@ from distutils.core import setup
 with open("README.md", "r") as fo:
     long_description = fo.read()
 
-setup(name='findmodules',
-      version='0.22',
+setup(name='vpltools',
+      version='0.23',
       description=('Facilitates Moodle VPL use by providing extensible subclasses of unittest.TestCase.'),
       long_description=long_description,
       author='William Bailey',
       author_email='william.bailey@centre.edu',
       url='https://github.com/wba234/baileycs1',
       package_dir={"":"src"},
-      packages=['findmodules'],
+      packages=['vpltools'],
      )

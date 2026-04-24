@@ -256,18 +256,44 @@ class SQLQuery(SupportedLanguageProgram):
     
     
 
+class Fortran90Program(SupportedLanguageProgram):
+    '''
+    Represents a program written in Fortran 90,
+    e.g., a student's submission, or an instructor's key program.
+    '''
+    def __init__(self, executable_dir: str, executable_name: str, source_files: list[str], output_file_name: str):
+        return super().__init__(
+            SupportedLanguages.Fortran90, # type: ignore
+            ["gfortran", "-o", executable_name] + source_files,
+            "main",
+            executable_dir,
+            executable_name,
+            source_files,
+            output_file_name)
+    
+
+    def compilationCommand(self):
+        return self.compilation_commands
+    
+
+    def run(self, cli_args, input="", **kwargs):
+        return subprocess.run([self.executable_name, *cli_args], input=input, **kwargs)
+
+
+
 class SupportedLanguages(enum.Enum):
     C = SupportedLanguage("C", ".c")
     CPP = SupportedLanguage("C++", ".cpp")
     SQL = SupportedLanguage("SQL", ".sql")
     Java = SupportedLanguage("Java", ".java")
     Python = SupportedLanguage("Python", ".py")
-
+    Fortran90 = SupportedLanguage("Fortran90", ".f90")
 
 OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE: dict[SupportedLanguages, Type[SupportedLanguageProgram]] = {
     SupportedLanguages.C        :   CProgram,
     SupportedLanguages.CPP      :   CPPProgram,
     SupportedLanguages.Java     :   JavaProgram,
     SupportedLanguages.Python   :   PythonProgram,
-    SupportedLanguages.SQL      :   SQLQuery
+    SupportedLanguages.SQL      :   SQLQuery,
+    SupportedLanguages.Fortran90:   Fortran90Program,
 }
