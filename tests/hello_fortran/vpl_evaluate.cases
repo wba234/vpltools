@@ -1,0 +1,7 @@
+Case = test_hello_fortran
+program to run = /usr/bin/python3
+program arguments = -m unittest test_hello_fortran.TestHelloFortran.test_hello_fortran
+expected exit code = 0
+output = /.*OK.*/i
+grade reduction = 100%
+

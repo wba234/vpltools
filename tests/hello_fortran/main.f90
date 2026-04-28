@@ -1,4 +1,4 @@
 program hello
-  ! This is a comment line; it is ignored by the compiler
-  print *, 'Hello, World!'
+  ! The standard first program, in fortran
+  print '("Hello World!")'
 end program hello
