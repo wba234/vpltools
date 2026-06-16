@@ -3,10 +3,12 @@ import vpltools
 class TestKeyProgramC(vpltools.VPLTestCase):
     '''
     Tests that files designated as key are ignored while compiling student programs,
-    and vice versa. These programs don't do anyting.
+    and vice versa. These programs don't do anything. Also tests that the GradeReduction 
+    flag works as intended.
     '''
 
     key_source_files = [ "key_program.c" ]
+    grade_reduction = vpltools.GradeReduction.LinearReduction
 
     def test_hello_c(self):
         '''

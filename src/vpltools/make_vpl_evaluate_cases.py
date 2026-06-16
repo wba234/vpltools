@@ -2,8 +2,14 @@
 Provides functions for automatically generating vpl_evaluate.cases files
 for use with Moodle VPL assignments.
 '''
-# import os.path
-import os
+import os.path
+import enum
+
+from math import ceil
+
+class GradeReduction(enum.Enum):
+    AbsoluteReduction = "oneHundred"
+    LinearReduction = "oneOverN"
 
 __unittest = True
 
@@ -39,7 +45,7 @@ def overwrite_file_if_different(file_path: str, new_contents: str, verbose: bool
     return did_write_file
 
 
-def python3_case_block(test_method_description: tuple[str, str, str]) -> str:
+def python3_case_block(test_method_description: tuple[str, str, str], num_tests: int, grade_reduction: GradeReduction) -> str:
     '''
     Returns a string suitable to write to a vpl_evaluate.cases file
     to invoke a single test method from a VPLTestCase.
@@ -85,6 +91,8 @@ def python3_case_block(test_method_description: tuple[str, str, str]) -> str:
     methods are referred to by a name which will let VPL find them, instead of using the extra 
     prefixes which will not be available to VPL at runtime.
     '''
+    penalty = f"{ceil(100/num_tests)}%" if grade_reduction == GradeReduction.LinearReduction else "100%"
+
     module_name, test_class, method_name = test_method_description
     module_name = module_name.split(".")[-1]
     test_case_format = (f"Case = {method_name}" + "\n"
@@ -92,7 +100,7 @@ def python3_case_block(test_method_description: tuple[str, str, str]) -> str:
         f"program arguments = -m unittest {module_name}.{test_class}.{method_name}" + "\n"
         f"expected exit code = 0\n"
         f"output = /.*OK.*/i"                   + "\n"
-        f"grade reduction = 100%"               + "\n"
+        f"grade reduction = {penalty}"  + "\n"
         "\n")
     return test_case_format
 
@@ -124,7 +132,7 @@ def get_vpl_eval_path(module_path: str) -> str:
         "vpl_evaluate.cases")
 
 
-def make_cases_file_from_list(module_path: str, test_method_list: list[tuple[str, str, str]], include_pylint: bool, verbose: bool):
+def make_cases_file_from_list(module_path: str, test_method_list: list[tuple[str, str, str]], include_pylint: bool, verbose: bool, grade_reduction: GradeReduction):
     '''
     Writes or overwrites the vpl_evaluate.cases file located alongside 
     student's module. Writes one "case" block for each element of test_method_list, 
@@ -133,7 +141,7 @@ def make_cases_file_from_list(module_path: str, test_method_list: list[tuple[str
     all_test_cases_string = ""
 
     for test_method_description in test_method_list:
-        all_test_cases_string += python3_case_block(test_method_description)
+        all_test_cases_string += python3_case_block(test_method_description, len(test_method_list), grade_reduction)
 
     if include_pylint and test_method_list:
         all_test_cases_string += pylint_case_block(test_method_list[0][0])

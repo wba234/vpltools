@@ -57,6 +57,7 @@ In addition to the features of the ```unittest``` package, you can use the follo
    - ```key_outfile_name: str:``` - Predefined name for solution program output files.
    - ```run_basic_tests: list[function]``` - Define a list of basic tests from ```vpltools.basic_tests.BASIC_TESTS``` to run when importing student Python programs. This list is empty by default.
    - ```include_pylint: bool``` - Flag to include a VPL case which runs the PyLint static analyzer on student's submission, and passes only if PyLint is completely happy (Python only).
+   - ```grade_reduction: vpltools.GradeReduction``` - A flag to indicate how grades are computed. Set this to ```vpltools.GradeReduction.LinearReduction``` to grade by number of passing tests, i.e., if there were 4 tests, each one would be worth 25% of the grade. Set this to ```vpltools.GradeReduction.AbsoluteReduction``` to grade on an all-or-nothing basis. I.e., Each test is worth 100%, and failing a single one reduces a student's grade to 0.
 
 
 ## Example Usage - Python Unit Testing
@@ -69,6 +70,7 @@ __unittest = True # Silence tracebacks from this module.
 class TestF2C(vpltools.VPLTestCase):
     key_source_files = [ "f2c_key.py", ]
     ignore_files = [ "temp_conversion_starter_code.py", ]
+    grade_reduction = vpltools.GradeReduction.LinearReduction
 
     def mainAssertLogic(self, temp):
         stuTemp = self.student_py_module.fahrenheit_to_celsius(temp)
@@ -188,7 +190,7 @@ There is a snippet for this boilerplate in ```/.vscode```. The format of the sni
 - Make sure that "Making vpl_evaluate.cases..." and "Making vpl_pre_run.sh..." don't appear where students can see them. Keep the output clean. Perhaps don't have expected program output? Just the return code?
 - Somehow block files with ( ) in the name? SQLite seems to have trouble with them.
 - Make Java packages work?
-- Add more tests for this. 
+- Add more tests for this. The tests are not actually testing anything, only that the things runs. E.g., test that the output for vpl_evaluate.cases is correct.
 - Add snippets for SQL tests.
 - Add snippets for other language End-to-end tests.
 - Add snippets for regex tests.

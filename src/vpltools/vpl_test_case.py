@@ -15,7 +15,7 @@ from vpltools.supported_languages import (
     OBJECT_REPRESENTING_PROGRAM_IN_LANGUAGE
 )
 from vpltools.basic_tests import run_basic_tests
-from vpltools.make_vpl_evaluate_cases import make_cases_file_from_list
+from vpltools.make_vpl_evaluate_cases import make_cases_file_from_list, GradeReduction
 
 __unittest = True
 # TODO: Remove student_program_name attribute. It's confusing. Call it student_program_base_name
@@ -42,7 +42,7 @@ class VPLTestCase(unittest.TestCase):
     # Subclasses are meant to override the default values as needed. When subclasses
     # do not override the default values, they use precisely the objects defined here.
     # I.e., if neither of two subclasses A and B override an a mutable attribute, and 
-    # and of A, B, or the parent class changes that attribute, it changes for all of 
+    # if any of A, B, or the parent class changes that attribute, it changes for all of 
     # them. I haven't found a tidy, scalable way of changing this behavior. 
     #
     # TL;DR: Don't change any of the mutable class attributes here, that can cause 
@@ -71,7 +71,7 @@ class VPLTestCase(unittest.TestCase):
     key_source_files: list[str] | None = None   # type: ignore
     ignore_files: list[str] = []
     ignore_extensions = []
-    
+    grade_reduction: GradeReduction = GradeReduction.AbsoluteReduction
     permitted_student_languages = list(SupportedLanguages)
 
     run_basic_tests = []
@@ -136,7 +136,7 @@ class VPLTestCase(unittest.TestCase):
         Check if we are running production by:
         - asking if the username is of the format used by the vpl jail server
         - asking if we are in that user's home directory
-        If both of these are true, we connvict on circumstantial evidence., and
+        If both of these are true, we convict on circumstantial evidence., and
         '''
         return ((username := os.getenv("USER")) is not None 
                 and (match := re.search('p[0-9]+', username)) is not None 
@@ -410,7 +410,8 @@ class VPLTestCase(unittest.TestCase):
             cls.THIS_DIR_NAME,
             vpl_test_tuples,
             cls.include_pylint if isinstance(cls.student_program, PythonProgram) else False,
-            cls.verbose
+            cls.verbose,
+            cls.grade_reduction
         )
 
 
