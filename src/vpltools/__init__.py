@@ -4,4 +4,4 @@ from vpltools.supported_languages import SupportedLanguages, UnsupportedFeatureE
 from vpltools.vpl_test_case import VPLTestCase, main
 from vpltools.sql_test_case import TestSQLSelectQuery, InMemoryTestingDatabase, SupportedSQLBackends
 from vpltools.historysearcher import HistorySearcher
-from vpltools.regextest import RegexTestCase
+from vpltools.regextest import RegexTestCase, MatchTarget
