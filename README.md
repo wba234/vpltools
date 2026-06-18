@@ -1,5 +1,5 @@
 # About VPLTools
-VPLTools is a package for writing tests which work with the VPL Moodle plugin. Test code is--naturally--written in Python, but VPLTools enables end-to-end testing of programs written in other languages too.
+VPLTools is a package for writing tests which work with the VPL plugin for Moodle. Test code is--naturally--written in Python, but VPLTools enables end-to-end testing of programs written in other languages too.
 
 ## Key Features
 VPLTools seeks to make implementing VPL assignments as easy as possible. Most of its features are available as part of the ```VPLTestCase``` class, which should be extended to create tests, like your would with Python's ```unittest.TestCase```. The ```VPLTestCase``` class provides a number of features:
@@ -7,8 +7,10 @@ VPLTools seeks to make implementing VPL assignments as easy as possible. Most of
 - automatic importing of key and student Python programs as modules
 - automatic generation the ```vpl_evaluate.cases``` file
 
-## Usage
-### Directory Setup
+VplTools also provides support for testing assignments that ask students to write SQL select statements (using ```TestSQLSelectQuery```), and regular expressions (using ```RegexTestCase```). In addition, the ```HistorySearcher``` class enables "terminal tutorial" style assignments which ask students to submit a list of their command history.
+
+# Usage
+## Directory Setup
 It is recommended that you use a separate directory for each assignment and its associated tests. A typical directory structure might look like this:
 ```text
 temperature_conversion_lab
@@ -30,18 +32,19 @@ temperature_conversion_lab
 - the test file
 - the key program, if required by the test file
 - ```vpl_evaluate.cases```
+- ```pre_vpl_run.sh```
 
 You also need to enable the ***keep files when running*** option for each of these.
 
-### Writing Tests
+## Writing Tests
 Test file names should start with "test_" and be located in the same directory as your answer key program, and any simulated student submissions to run the tests on. Write tests as your normally would with Python's ```unittest``` module. The ```vpl_evaluate.cases``` file is generated automatically (in ```tearDownClass```) when the set of test cases runs to completion. 
 
 In addition to the features of the ```unittest``` package, you can use the following attributes and functions provided by ```VPLTestCase```:
-   #### Important Methods
+   ### Important Methods
    - ```run_student_program()``` - Call this to execute the student's program in a subprocess.
    - ```run_key_program()``` - Call this to execute the solution program in a subprocess.
 
-   #### Important Attributes
+   ### Important Attributes
    - ```key_source_files: list[str]``` - Set this in class scope to tell VPLTools which files in the local directory are part of the solution program. Can be empty.
    - ```ignore_files: list[str]``` - Set this in class scope to tell VPLTools which files in the local directory should be ignored.
    - ```permitted_student_languages: list[SupportedLanguage]``` - Set this to restrict which programming languages are permitted. ```NoProgramError``` will be thrown if this is violated. Set to ```vpltools.SUPPORTED_LANGUAGES``` by default. Currently, the following languages are supported; use the strings below as keys in the ```SUPPORTED_LANGUAGES``` dictionary to refer to them when constructing your ```permitted_student_languages```. E.g., if you only want to allow C++, set ```permitted_student_languages = [ SUPPORTED_LANGUAGES["C++] ]```:
@@ -95,7 +98,7 @@ if __name__ == '__main__':
 
 Note that ```__unittest = True``` has the effect of suppressing parts of error tracebacks which originate from within testing code, and which can be confusing to students.
 
-### Example Use - End-to-End Testing
+## Example Use - End-to-End Testing
 ```python
 import os.path
 import unittest
@@ -178,12 +181,7 @@ if __name__ == "__main__":
     vpltools.main()
 ```
 
-## Other Programming Assignments
-In addition to ```VPLTestCase``` VPLTools also provides some classes which support other, more specific types of programming assignments:
- - ```HistorySearcher``` for command-line tutorial assignments which ask students to submit a list of their command history.
-- ```RegexTestCase``` for assignments which ask students to submit a regular expression pattern.
-
-## Examples and VSCode Snippets
+## Example Files and VSCode Snippets
 The ```snippets/``` directory contains example test files for you to start working from. These example files have also been incorporated into a snippets file for VSCode, which can help you get started writing tests faster. Copy the ```vpltools.code-snippets``` file into the ```.vscode``` directory of your project to make the snippets available to you. Then, typing ```test``` in a snakefile to trigger all of the snippets for you to choose from. 
 
 # To Do
@@ -199,16 +197,16 @@ The ```snippets/``` directory contains example test files for you to start worki
 - Add a method for writing student and key output files to memory mapped files, for speed.
 - Add a method for writing each test output file from the key program to a separate file, so that they can be cached, for speed.
 
-## Installation
+# Installation
 To use this with Moodle VPLs, you will need to install this package into your Moodle VPLJail manually. At time of writing, ```vpltools``` is _not_ in the Python Package Index. To install manually:
 1. Download this repository.
 2. Navigate (i.e. ```cd```) into the top-level folder of the repository. You should see a file called ```pyproject.toml```.
 3. In a terminal, run ```python3 -m pip install .``` to install the program. If you are actively developing this module, you may want to install this in "editable" mode by adding ```-e``` or ```--editable```
 ```python3 -m pip install -editable .```. 
-### Installing in VPLJail
+## Installing in VPLJail
 You _should not_ install this in editable mode in the VPLJail. This will cause the package not to be found by the Python interpreter. Also, after installing anything into the VPLJail, you should restart the service with: ```systemctl restart vpl-jail-service```.
 
-### Before Installing
+## Before Installing
 This package requires the ```mariadb``` Python package. This means that there must be a functioning MariaDB installation, including the system packages ```libmariadb3``` ```libmariadb-dev```. So before installing ```vpltools```, run this command:
 ```bash
 sudo apt install mariadb-server libmariadb3 libmariadb-dev
