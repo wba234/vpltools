@@ -183,17 +183,14 @@ In addition to ```VPLTestCase``` VPLTools also provides some classes which suppo
  - ```HistorySearcher``` for command-line tutorial assignments which ask students to submit a list of their command history.
 - ```RegexTestCase``` for assignments which ask students to submit a regular expression pattern.
 
-## VSCode Snippet
-There is a snippet for this boilerplate in ```/.vscode```. The format of the snippet (JSON) is a little specific to VSCode, but the code can be extracted relatively easily. Type ```test``` in a snakefile to trigger the snippet. 
+## Examples and VSCode Snippets
+The ```snippets/``` directory contains example test files for you to start working from. These example files have also been incorporated into a snippets file for VSCode, which can help you get started writing tests faster. Copy the ```vpltools.code-snippets``` file into the ```.vscode``` directory of your project to make the snippets available to you. Then, typing ```test``` in a snakefile to trigger all of the snippets for you to choose from. 
 
 # To Do
 - Make sure that "Making vpl_evaluate.cases..." and "Making vpl_pre_run.sh..." don't appear where students can see them. Keep the output clean. Perhaps don't have expected program output? Just the return code?
 - Somehow block files with ( ) in the name? SQLite seems to have trouble with them.
 - Make Java packages work?
 - Add more tests for this. The tests are not actually testing anything, only that the things runs. E.g., test that the output for vpl_evaluate.cases is correct.
-- Add snippets for SQL tests.
-- Add snippets for other language End-to-end tests.
-- Add snippets for regex tests.
 - Test this under Windows? VPLJail is a POSIX system, right? Do I need to worry about windows?
 - Add instrumentation, so that submissions could be tracked and studied. You'll probably want a database for this, and to seek IRB approval before switching it on.
 - What would it take to add support for detecting AI-generated code?
