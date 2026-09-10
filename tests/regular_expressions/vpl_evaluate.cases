@@ -229,9 +229,9 @@ expected exit code = 0
 output = /.*OK.*/i
 grade reduction = 100%
 
-Case = test_string_misbehavin
+Case = test_string_misbehaving
 program to run = /usr/bin/python3
-program arguments = -m unittest test_regex.test_match_decimal_numbers.test_string_misbehavin
+program arguments = -m unittest test_regex.test_match_decimal_numbers.test_string_misbehaving
 expected exit code = 0
 output = /.*OK.*/i
 grade reduction = 100%

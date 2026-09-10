@@ -4,9 +4,13 @@ import sys
 import unittest
 import warnings
 import importlib
-from types import FunctionType
-from copy import deepcopy
 import contextlib
+import ast
+import traceback
+from types import FunctionType, ModuleType
+from copy import deepcopy
+from unittest.mock import patch
+from io import StringIO
 from vpltools.supported_languages import (
     SupportedLanguages, 
     SupportedLanguageProgram,
@@ -75,6 +79,8 @@ class VPLTestCase(unittest.TestCase):
     permitted_student_languages = list(SupportedLanguages)
 
     run_basic_tests = []
+    setup_failed = False
+    setup_failure_message = ""
 
     include_pylint = False
 
@@ -189,28 +195,56 @@ class VPLTestCase(unittest.TestCase):
         cls.program_execution_env = cls.subprocess_run_options["env"]
 
         # If the student program is a Python program, import it as a module.
-        cls.student_py_module = cls.import_as_py_module(cls.student_program, cls.run_basic_tests)
-        cls.key_py_module = cls.import_as_py_module(cls.key_program)
+        cls.student_py_module, cls.student_program_name = cls.import_as_py_module(cls.student_program, cls.run_basic_tests)
+        cls.key_py_module, cls.key_program_name = cls.import_as_py_module(cls.key_program)
 
         return super().setUpClass()
 
 
+    def setUp(self):
+        if self.setup_failed:
+            self.fail(f"Failed to run your program: {self.setup_failure_message}")
+        return super().setUp()
+
+
     @classmethod
-    def import_as_py_module(cls, program: SupportedLanguageProgram | None, tests_to_run: list[FunctionType] = []):
+    def contains_valid_python(cls, filename) -> bool:
+        '''
+        Returns True if filename contains valid Python code, false otherwise.
+
+        Source - https://stackoverflow.com/a/57508838
+        Posted by jmd_dk, modified by community. See post 'Timeline' for change history
+        Retrieved 2026-09-10, License - CC BY-SA 4.0
+        '''
+        with open(os.path.join(cls.THIS_DIR_NAME, filename), "r") as f:
+            source = f.read()
+        valid = True
+        try:
+            ast.parse(source)
+        except SyntaxError:
+            valid = False
+            # traceback.print_exc()  # Remove to silence any errros
+
+        return valid
+
+
+    @classmethod
+    def import_as_py_module(cls, program: SupportedLanguageProgram | None, tests_to_run: list[FunctionType] = []) -> tuple[ModuleType, str]:
         '''
         Returns a module object if program is a Python program, None otherwise. 
         None will also be returned if the import fails for any reason. This can happen 
         if a Python script which expects arguments (which will not be supplied during import).
         Runs each of the basic tests supplied.
         '''
-        if not isinstance(program, PythonProgram):
-            return None
-        
-        # Pipe any output received during import of student file into the null device.
-        null_dev = open(os.devnull, "w")
+        program_file_name = None if program is None else os.path.splitext(program.executable_name)[0]
 
-        # When importing the 
-        student_file_name = os.path.splitext(program.executable_name)[0]
+        if not isinstance(program, PythonProgram):
+            return None, program_file_name
+
+        if not cls.contains_valid_python(program.executable_name):
+            cls.setup_failed = True
+            cls.setup_failure_message = "Failed to parse your module. Do you have a syntax error?"
+            return None, program_file_name
 
         cwd_parts = os.getcwd().split(os.sep)
         module_path_parts = cls.THIS_DIR_NAME.split(os.sep)
@@ -219,23 +253,37 @@ class VPLTestCase(unittest.TestCase):
             del cwd_parts[0]
             del module_path_parts[0]
         
-        module_path_parts.append(student_file_name)
+        module_path_parts.append(program_file_name)
 
-        with contextlib.redirect_stdout(null_dev): # I don't want any output from student modules when importing.
-            try:
-                module = importlib.import_module(".".join(module_path_parts))
-            except ModuleNotFoundError:
-                module = importlib.import_module(module_path_parts[-1])
-            except: # In ANY part of the import fails, then return None.
-                null_dev.close()
-                return None
+        # Student modules can be messy. This context manager 
+        # 1. redirects any outout to the null device, and 
+        # 2. patches an empty string into stdin so that any uses of input(),
+        #    outside of, main(), or with unguarded main(), don't make the import hang.
+        module = None
+        possible_importable_names = [ ".".join(module_path_parts), module_path_parts[-1] ]
+        null_dev = open(os.devnull, "w")
+        with contextlib.redirect_stdout(null_dev):
+            for possbile_name in possible_importable_names:
+                with patch('sys.stdin', new=StringIO("")):
+                    try:
+                        module = importlib.import_module(possbile_name)
+                        break
+                    except ModuleNotFoundError:
+                        pass    # Couldn't find module, try next approach.
+                    except EOFError:
+                        break   # Module tried to read input. Stop here, because while we can't 
+                                # import it, but can still run later with self.run_student_program().
+                    except Exception as e:
+                        warnings.warn(str(e))
 
         null_dev.close()
-        cls.student_program_name = student_file_name # change default name if we're in Python # TODO MOVE ME TO program creation logic
+
+        if module is None:
+            return None, program_file_name
         
         run_basic_tests(module, tests_to_run)
 
-        return module
+        return module, program_file_name
 
     
 
