@@ -203,10 +203,13 @@ class PythonProgram(SupportedLanguageProgram):
             raise ValueError("No input files found!")
         elif len(source_files) == 1:
             exec_name = source_files[0]
-        elif len(source_files) > 1:
-            if "main" in source_files:
-                exec_name = source_files[source_files.index("main")]
-            else:
+        elif len(source_files) > 1: # If there is more than file that appears to be from the student, try to figure out where to start:
+            if "main.py" in source_files:   # If there's a main.py, use that as the entry point, but keep all the files.
+                exec_name = source_files[source_files.index("main.py")]
+            elif "student_file.py" in source_files:     # If there's a student_file.py, keep only that.
+                source_files = [ "student_file.py" ]    # This is not documented. This is a temporary patch to go with 
+                exec_name = source_files[0]             # local_testing_server, which renames submissions to this.
+            else:                                       # TODO: Remove this and make it more flexible and, sophisticated.
                 raise ValueError(f"If you have more than 1 file, you must name one of them main.py! Found {source_files}")
 
         return super().__init__(

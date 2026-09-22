@@ -6,7 +6,6 @@ import warnings
 import importlib
 import contextlib
 import ast
-import traceback
 from types import FunctionType, ModuleType
 from copy import deepcopy
 from unittest.mock import patch
@@ -223,7 +222,6 @@ class VPLTestCase(unittest.TestCase):
             ast.parse(source)
         except SyntaxError:
             valid = False
-            # traceback.print_exc()  # Remove to silence any errros
 
         return valid
 
@@ -263,10 +261,10 @@ class VPLTestCase(unittest.TestCase):
         possible_importable_names = [ ".".join(module_path_parts), module_path_parts[-1] ]
         null_dev = open(os.devnull, "w")
         with contextlib.redirect_stdout(null_dev):
-            for possbile_name in possible_importable_names:
+            for possible_name in possible_importable_names:
                 with patch('sys.stdin', new=StringIO("")):
                     try:
-                        module = importlib.import_module(possbile_name)
+                        module = importlib.import_module(possible_name)
                         break
                     except ModuleNotFoundError:
                         pass    # Couldn't find module, try next approach.
