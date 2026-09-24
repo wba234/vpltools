@@ -280,7 +280,7 @@ class VPLTestCase(unittest.TestCase):
                         if is_stu_module: 
                             cls.setup_failed = True
                             cls.setup_failure_message = "Failed to import your module. Did you forget the 'if __name__ == \"__main__\":'?"
-                            warnings.warn(f"EOFError was raised when importing {possible_name}. This file may have tried to read from stdin.")
+                            # warnings.warn(f"EOFError was raised when importing {possible_name}. This file may have tried to read from stdin.")
                             break   # Module tried to read input. Stop here, because while we can't 
                                     # import it, but can still run later with self.run_student_program().
                     except Exception as e:
