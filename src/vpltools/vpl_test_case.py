@@ -236,19 +236,21 @@ class VPLTestCase(unittest.TestCase):
         '''
         program_file_name = None if program is None else os.path.splitext(program.executable_name)[0]
 
+        if is_stu_module:
+            cls.setup_failed = False 
+        # ^^ This isn't redundant to class initialization, because when testing multiple files,
+        # e.g., a zip file, this class is not reinitialized for each file. So, when one fails 
+        # due to a syntax error, all following files would also fail unless this flag were reset.
+        # BUT: This function is used for importing both submissions and key programs, but the 
+        # flag is just for submissions, so only modify it when is_stu_module is True.
+
         if not isinstance(program, PythonProgram):
             return None, program_file_name
 
-        if not cls.contains_valid_python(program.executable_name):
+        if is_stu_module and not cls.contains_valid_python(program.executable_name):
             cls.setup_failed = True
             cls.setup_failure_message = "Failed to parse your module. Do you have a syntax error?"
             return None, program_file_name
-        elif is_stu_module: # This function is used for importing both 
-            # submissions and keys, but the flag is just for submissions.
-            cls.setup_failed = False # This isn't redundant to class initialization,
-            # because when testing multiple files, e.g., a zip file, this class is not 
-            # reinitialized for each file, so, when one fails due to a syntax error, the 
-            # rest would also fail.
 
         cwd_parts = os.getcwd().split(os.sep)
         module_path_parts = cls.THIS_DIR_NAME.split(os.sep)
@@ -275,8 +277,12 @@ class VPLTestCase(unittest.TestCase):
                     except ModuleNotFoundError:
                         pass    # Couldn't find module, try next approach.
                     except EOFError:
-                        break   # Module tried to read input. Stop here, because while we can't 
-                                # import it, but can still run later with self.run_student_program().
+                        if is_stu_module: 
+                            cls.setup_failed = True
+                            cls.setup_failure_message = "Failed to import your module. Did you forget the 'if __name__ == \"__main__\":'?"
+                            warnings.warn(f"EOFError was raised when importing {possible_name}. This file may have tried to read from stdin.")
+                            break   # Module tried to read input. Stop here, because while we can't 
+                                    # import it, but can still run later with self.run_student_program().
                     except Exception as e:
                         warnings.warn(str(e))
 
