@@ -195,7 +195,7 @@ class VPLTestCase(unittest.TestCase):
 
         # If the student program is a Python program, import it as a module.
         cls.student_py_module, cls.student_program_name = cls.import_as_py_module(cls.student_program, cls.run_basic_tests)
-        cls.key_py_module, cls.key_program_name = cls.import_as_py_module(cls.key_program)
+        cls.key_py_module, cls.key_program_name = cls.import_as_py_module(cls.key_program, is_stu_module=False)
 
         return super().setUpClass()
 
@@ -227,7 +227,7 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def import_as_py_module(cls, program: SupportedLanguageProgram | None, tests_to_run: list[FunctionType] = []) -> tuple[ModuleType, str]:
+    def import_as_py_module(cls, program: SupportedLanguageProgram | None, tests_to_run: list[FunctionType] = [], is_stu_module: bool =True) -> tuple[ModuleType, str]:
         '''
         Returns a module object if program is a Python program, None otherwise. 
         None will also be returned if the import fails for any reason. This can happen 
@@ -243,6 +243,12 @@ class VPLTestCase(unittest.TestCase):
             cls.setup_failed = True
             cls.setup_failure_message = "Failed to parse your module. Do you have a syntax error?"
             return None, program_file_name
+        elif is_stu_module: # This function is used for importing both 
+            # submissions and keys, but the flag is just for submissions.
+            cls.setup_failed = False # This isn't redundant to class initialization,
+            # because when testing multiple files, e.g., a zip file, this class is not 
+            # reinitialized for each file, so, when one fails due to a syntax error, the 
+            # rest would also fail.
 
         cwd_parts = os.getcwd().split(os.sep)
         module_path_parts = cls.THIS_DIR_NAME.split(os.sep)
