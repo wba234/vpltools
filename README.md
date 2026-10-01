@@ -197,6 +197,7 @@ The ```snippets/``` directory contains example test files for you to start worki
 - Add a method for writing student and key output files to memory mapped files, for speed.
 - Add a method for writing each test output file from the key program to a separate file, so that they can be cached, for speed.
 - Encode dependencies like a java compiler, fortran compiler, somehow.
+- Create an installation script which installs (or at least tries to) C/C++ compilers, fortran compiler, Java compiler, and MariaDB (along with it's connector).
 
 # Installation
 To use this with Moodle VPLs, you will need to install this package into your Moodle VPLJail manually. At time of writing, ```vpltools``` is _not_ in the Python Package Index. To install manually:
