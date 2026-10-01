@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vpltools"
-version = "0.23"
+version = "0.24"
 authors = [
-  { name="William Bailey", email="william.bailey@centre.edu" },
+  { name="William Bailey", email="wbailey@transy.edu" },
 ]
 description = "Facilitates Moodle VPL use by providing extensible subclasses of unittest.TestCase."
 readme = "README.md"
@@ -24,4 +24,4 @@ classifiers = [
 license = "MIT"
 
 [project.urls]
-"Homepage" = "https://github.com/wba234/baileycs1"
+"Homepage" = "https://github.com/wba234/vpltools"
