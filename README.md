@@ -185,6 +185,7 @@ if __name__ == "__main__":
 The ```snippets/``` directory contains example test files for you to start working from. These example files have also been incorporated into a snippets file for VSCode, which can help you get started writing tests faster. Copy the ```vpltools.code-snippets``` file into the ```.vscode``` directory of your project to make the snippets available to you. Then, typing ```test``` in a snakefile to trigger all of the snippets for you to choose from. 
 
 # To Do
+- Revise the way in which supported programming languages are encoded. It seems messy. How about an enumerator?
 - Make sure that "Making vpl_evaluate.cases..." and "Making vpl_pre_run.sh..." don't appear where students can see them. Keep the output clean. Perhaps don't have expected program output? Just the return code?
 - Somehow block files with ( ) in the name? SQLite seems to have trouble with them.
 - Make Java packages work?
