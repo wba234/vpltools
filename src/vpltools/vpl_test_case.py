@@ -570,6 +570,21 @@ class VPLTestCase(unittest.TestCase):
         return key_process
 
 
+    def call_student_function(self, function: FunctionType, args: tuple):
+        try:
+            stu_return_val = function(*args)
+            return stu_return_val
+        except Exception as e:
+            err = e
+
+        args_list = [ str(arg) for arg in args ]
+        args_string = "'" + "', '".join(args_list) + "'"
+        self.fail(
+            # f"Your function crashed when called like this: {function.__name__}({args_string})\n"
+            f"Function '{function.__name__}' crashed on this call: {function.__name__}({args_string})\n"
+            f"Error: {err}")
+
+
 # This saves the vpltools user an import, allowing them to write the idiom
 # if __name__ == "__main__":
 #     vpltools.main()
