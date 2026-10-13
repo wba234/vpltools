@@ -227,7 +227,10 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def import_as_py_module(cls, program: SupportedLanguageProgram | None, tests_to_run: list[FunctionType] = [], is_stu_module: bool =True) -> tuple[ModuleType, str]:
+    def import_as_py_module(cls, 
+                            program: SupportedLanguageProgram | None, 
+                            tests_to_run: list[FunctionType] = [], 
+                            is_stu_module: bool = True) -> tuple[ModuleType | None, str | None]:
         '''
         Returns a module object if program is a Python program, None otherwise. 
         None will also be returned if the import fails for any reason. This can happen 
@@ -258,8 +261,9 @@ class VPLTestCase(unittest.TestCase):
         while len(cwd_parts) > 0 and len(module_path_parts) > 0 and cwd_parts[0] == module_path_parts[0]:
             del cwd_parts[0]
             del module_path_parts[0]
-        
-        module_path_parts.append(program_file_name)
+
+        if program_file_name is not None:
+            module_path_parts.append(program_file_name)
 
         # Student modules can be messy. This context manager 
         # 1. redirects any outout to the null device, and 
@@ -284,7 +288,7 @@ class VPLTestCase(unittest.TestCase):
                             break   # Module tried to read input. Stop here, because while we can't 
                                     # import it, but can still run later with self.run_student_program().
                     except Exception as e:
-                        warnings.warn(str(e))
+                        warnings.warn(f"Importing your module produced the following error: {e}")
 
         null_dev.close()
 
@@ -380,7 +384,7 @@ class VPLTestCase(unittest.TestCase):
 
 
     @classmethod
-    def detectLanguageAndMakeProgram(cls, file_list: list[str], executable_name: str, output_file_name: str, unmask_hidden_files: bool=False) -> SupportedLanguageProgram:
+    def detectLanguageAndMakeProgram(cls, file_list: list[str], executable_name: str | None, output_file_name: str | None, unmask_hidden_files: bool=False) -> SupportedLanguageProgram:
         '''
         Searches file_list for items which have the extension of a supported programming language, 
         using the first match found. Returns an object of the appropriate 
@@ -403,7 +407,7 @@ class VPLTestCase(unittest.TestCase):
 
                 if current_program_lang is None and file.endswith(supported_lang.value.extension):
                     current_program_lang = supported_lang
-                    current_program_class = lang_program_class
+                    current_program_class = lang_program_class  # type: ignore
                     source_files.append(file)
 
                 elif current_program_lang is not None and file.endswith(current_program_lang.value.extension):
