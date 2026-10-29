@@ -250,10 +250,14 @@ class VPLTestCase(unittest.TestCase):
         if not isinstance(program, PythonProgram):
             return None, program_file_name
 
-        if is_stu_module and not cls.contains_valid_python(program.executable_name):
+        if is_stu_module and program is not None and not cls.contains_valid_python(program.executable_name):
             cls.setup_failed = True
             cls.setup_failure_message = "Failed to parse your module. Do you have a syntax error?"
             return None, program_file_name
+
+        if program_file_name is not None and "." in program_file_name:
+            cls.setup_failed = True
+            cls.setup_failure_message = "Couldn't import your module: your file name contained a period, other than for the '.py' extension. Please rename it."
 
         cwd_parts = os.getcwd().split(os.sep)
         module_path_parts = cls.THIS_DIR_NAME.split(os.sep)
